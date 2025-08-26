@@ -64,7 +64,7 @@ interface Analytics {
   }>
 }
 
-type ViewMode = 'pos' | 'orders' | 'analytics'
+type ViewMode = 'pos' | 'orders' | 'analytics' 
 
 export default function POSPage() {
   const [currentOrder, setCurrentOrder] = useState<OrderItem[]>([])
@@ -72,6 +72,8 @@ export default function POSPage() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('card')
   const [viewMode, setViewMode] = useState<ViewMode>('pos')
   const [orders, setOrders] = useState<any[]>([])
+  const [orderType, setOrderType]= useState<'dine-in' | 'take-out'>('dine-in')
+  const [tableNumber, setTableNumber] = useState<string>('')
   const [analytics, setAnalytics] = useState<Analytics>({
     totalSales: 0,
     totalOrders: 0,
@@ -199,6 +201,8 @@ export default function POSPage() {
         return [...prev, { product, quantity: 1, total_price: product.price }]
       })
     }
+    
+
   
     const removeFromOrder = (productId: string) => {
       setCurrentOrder(prev => prev.filter(item => item.product.id !== productId))
@@ -285,6 +289,7 @@ export default function POSPage() {
         }
 
         const orders = ordersData || []
+
         
         // Calculate analytics
         const totalSales = orders.reduce((sum, order) => sum + order.total_amount, 0)
@@ -393,6 +398,8 @@ export default function POSPage() {
         status: 'completed' as const,
         total_amount: getTotalAmount(),
         payment_method: paymentMethod,
+        order_type: orderType,
+        table_number: orderType === 'dine-in' ? (tableNumber || null) : null,
         order_items: currentOrder.map(item => ({
           product_id: item.product.id,
           product: item.product,
@@ -575,6 +582,8 @@ export default function POSPage() {
           <div class="muted">Order #: ${orderNumber}</div>
           <div class="muted">Date: ${timestamp}</div>
           <div class="muted">Payment: ${paymentMethod.toUpperCase()}</div>
+          <div class="muted">Order Type: ${orderType.replace('-', ' ')}</div>
+          ${orderType === 'dine-in' ? `<div class="muted">Table: ${tableNumber || 'N/A'}</div>` : ''}
           <table>
             <tbody>
               ${itemsHtml}
@@ -836,6 +845,36 @@ export default function POSPage() {
                 </div>
               )}
 
+              {/* Order Type */}
+              <div className="mb-6">
+                <h3 className="font-medium text-gray-700 mb-3">Order Type</h3>
+                <div className="flex gap-2">
+                  {(['dine-in', 'take-out'] as const).map(type => (
+                    <button
+                      key={type}
+                      onClick={() => setOrderType(type)}
+                      className={`flex-1 py-2 px-3 rounded-lg font-medium capitalize transition-colors ${
+                        orderType === type ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {type.replace('-', ' ')}
+                    </button>
+                  ))}
+                </div>
+
+                {orderType === 'dine-in' && (
+                  <div className="mt-3">
+                    <label className="block text-sm text-gray-600 mb-1">Table Number (optional)</label>
+                    <input
+                      value={tableNumber}
+                      onChange={(e) => setTableNumber(e.target.value)}
+                      placeholder="e.g. 12"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                    />
+                  </div>
+                )}
+              </div>
+
               {/* Payment Methods */}
               <div className="mb-6">
                 <h3 className="font-medium text-gray-700 mb-3">Payment Method</h3>
@@ -991,7 +1030,7 @@ export default function POSPage() {
         
         
         {viewMode === 'analytics' && (
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div className="flex-1 p-6 overflow-y-auto text-gray-800">
             <div className="max-w-6xl mx-auto">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">Analytics Dashboard</h2>
@@ -999,7 +1038,7 @@ export default function POSPage() {
                   <select
                     value={dateRange}
                     onChange={(e) => setDateRange(e.target.value as any)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                   >
                     <option value="today">Today</option>
                     <option value="week">Last 7 Days</option>
