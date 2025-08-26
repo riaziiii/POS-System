@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { 
   ShoppingCart, 
   CreditCard, 
@@ -12,42 +12,14 @@ import {
   Loader2, 
   CheckCircle, 
   AlertCircle,
-  BarChart3,
   TrendingUp,
-  Clock,
   DollarSign,
   Package,
-  Users,
-  Calendar,
-  Filter
+  Users
 } from 'lucide-react'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
-import { Order, OrderItem as OrderItemType } from '@/types'
-
-interface Product {
-  id: string
-  name: string
-  price: number
-  category: string
-  image_url?: string
-  description?: string
-  stock?: number
-  is_available?: boolean
-}
-
-interface OrderItem {
-  product: Product
-  quantity: number
-  total_price: number
-}
-
-interface ProcessingState {
-  isProcessing: boolean
-  isSuccess: boolean
-  isError: boolean
-  message: string
-}
+import { Product, Order, OrderItem } from '@/types'
 
 interface Analytics {
   totalSales: number
@@ -71,7 +43,7 @@ export default function POSPage() {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('card')
   const [viewMode, setViewMode] = useState<ViewMode>('pos')
-  const [orders, setOrders] = useState<any[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
   const [orderType, setOrderType]= useState<'dine-in' | 'take-out'>('dine-in')
   const [tableNumber, setTableNumber] = useState<string>('')
   const [analytics, setAnalytics] = useState<Analytics>({
@@ -82,7 +54,12 @@ export default function POSPage() {
     salesByCategory: [],
     recentOrders: []
   })
-  const [processingState, setProcessingState] = useState<ProcessingState>({
+  const [processingState, setProcessingState] = useState<{
+    isProcessing: boolean
+    isSuccess: boolean
+    isError: boolean
+    message: string
+  }>({
     isProcessing: false,
     isSuccess: false,
     isError: false,
@@ -231,128 +208,128 @@ export default function POSPage() {
       : products.filter(product => product.category === selectedCategory)
   
     // Load orders and analytics on component mount
+    const loadOrders = useCallback(async () => {
+      try {
+        if (supabase) {
+          const { data, error } = await supabase
+            .from('orders')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50)
+
+          if (error) {
+            console.error('Error loading orders:', error)
+          } else {
+            setOrders(data || [])
+          }
+        }
+      } catch (error) {
+        console.error('Error loading orders:', error)
+      }
+    }, [])
+
+    const loadAnalytics = useCallback(async () => {
+      try {
+        if (supabase) {
+          // Get date range
+          const now = new Date()
+          const startDate = new Date()
+          
+          switch (dateRange) {
+            case 'today':
+              startDate.setHours(0, 0, 0, 0)
+              break
+            case 'week':
+              startDate.setDate(now.getDate() - 7)
+              break
+            case 'month':
+              startDate.setMonth(now.getMonth() - 1)
+              break
+          }
+
+          const { data: ordersData, error } = await supabase
+            .from('orders')
+            .select('*')
+            .gte('created_at', startDate.toISOString())
+            .lte('created_at', now.toISOString())
+
+          if (error) {
+            console.error('Error loading analytics:', error)
+            return
+          }
+
+          const orders: Order[] = ordersData ?? []
+
+          
+          // Calculate analytics
+          const totalSales = orders.reduce((sum, order) => sum + order.total_amount, 0)
+          const totalOrders = orders.length
+          const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0
+
+          // Calculate top products
+          const productSales: Record<string, { name: string; quantity: number; revenue: number }> = {}
+          orders.forEach(order => {
+            order.order_items?.forEach((item: OrderItem) => {
+              if (productSales[item.product_id]) {
+                productSales[item.product_id].quantity += item.quantity
+                productSales[item.product_id].revenue += item.total_price
+              } else {
+                productSales[item.product_id] = {
+                  name: item.product?.name || 'Unknown Product',
+                  quantity: item.quantity,
+                  revenue: item.total_price
+                }
+              }
+            })
+          })
+
+          const topProducts = Object.values(productSales)
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 5)
+
+          // Calculate sales by category
+          const categorySales: { [key: string]: number } = {}
+          orders.forEach(order => {
+            order.order_items?.forEach((item: OrderItem) => {
+              const category = item.product?.category || 'unknown'
+              categorySales[category] = (categorySales[category] || 0) + item.total_price
+            })
+          })
+
+          const salesByCategory = Object.entries(categorySales).map(([category, sales]) => ({
+            category,
+            sales
+          }))
+
+          // Get recent orders
+          const recentOrders = orders.slice(0, 10).map((order: Order) => ({
+            id: order.id,
+            order_number: order.order_number,
+            total_amount: order.total_amount,
+            status: order.status,
+            created_at: order.created_at
+          }))
+
+          setAnalytics({
+            totalSales,
+            totalOrders,
+            averageOrderValue,
+            topProducts,
+            salesByCategory,
+            recentOrders
+          })
+        }
+      } catch (error) {
+        console.error('Error loading analytics:', error)
+      }
+    }, [dateRange])
+
     useEffect(() => {
       loadOrders()
       loadAnalytics()
-    }, [dateRange])
+    }, [loadOrders, loadAnalytics])
   
   // ... rest of your existing code ...
-
-  const loadOrders = async () => {
-    try {
-      if (supabase) {
-        const { data, error } = await supabase
-          .from('orders')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(50)
-
-        if (error) {
-          console.error('Error loading orders:', error)
-        } else {
-          setOrders(data || [])
-        }
-      }
-    } catch (error) {
-      console.error('Error loading orders:', error)
-    }
-  }
-
-  const loadAnalytics = async () => {
-    try {
-      if (supabase) {
-        // Get date range
-        const now = new Date()
-        let startDate = new Date()
-        
-        switch (dateRange) {
-          case 'today':
-            startDate.setHours(0, 0, 0, 0)
-            break
-          case 'week':
-            startDate.setDate(now.getDate() - 7)
-            break
-          case 'month':
-            startDate.setMonth(now.getMonth() - 1)
-            break
-        }
-
-        const { data: ordersData, error } = await supabase
-          .from('orders')
-          .select('*')
-          .gte('created_at', startDate.toISOString())
-          .lte('created_at', now.toISOString())
-
-        if (error) {
-          console.error('Error loading analytics:', error)
-          return
-        }
-
-        const orders = ordersData || []
-
-        
-        // Calculate analytics
-        const totalSales = orders.reduce((sum, order) => sum + order.total_amount, 0)
-        const totalOrders = orders.length
-        const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0
-
-        // Calculate top products
-        const productSales: { [key: string]: { name: string; quantity: number; revenue: number } } = {}
-        orders.forEach(order => {
-          order.order_items?.forEach((item: any) => {
-            if (productSales[item.product_id]) {
-              productSales[item.product_id].quantity += item.quantity
-              productSales[item.product_id].revenue += item.total_price
-            } else {
-              productSales[item.product_id] = {
-                name: item.product?.name || 'Unknown Product',
-                quantity: item.quantity,
-                revenue: item.total_price
-              }
-            }
-          })
-        })
-
-        const topProducts = Object.values(productSales)
-          .sort((a, b) => b.revenue - a.revenue)
-          .slice(0, 5)
-
-        // Calculate sales by category
-        const categorySales: { [key: string]: number } = {}
-        orders.forEach(order => {
-          order.order_items?.forEach((item: any) => {
-            const category = item.product?.category || 'unknown'
-            categorySales[category] = (categorySales[category] || 0) + item.total_price
-          })
-        })
-
-        const salesByCategory = Object.entries(categorySales).map(([category, sales]) => ({
-          category,
-          sales
-        }))
-
-        // Get recent orders
-        const recentOrders = orders.slice(0, 10).map(order => ({
-          id: order.id,
-          order_number: order.order_number,
-          total_amount: order.total_amount,
-          status: order.status,
-          created_at: order.created_at
-        }))
-
-        setAnalytics({
-          totalSales,
-          totalOrders,
-          averageOrderValue,
-          topProducts,
-          salesByCategory,
-          recentOrders
-        })
-      }
-    } catch (error) {
-      console.error('Error loading analytics:', error)
-    }
-  }
 
   const updateOrderStatus = async (orderId: string, status: 'pending' | 'completed' | 'cancelled') => {
     try {
@@ -551,10 +528,6 @@ export default function POSPage() {
     }
   }
 
-  const generateReceiptContent = () => {
-    // ... existing generateReceiptContent implementation ...
-  }
-
   const generateReceiptHtml = (orderNumber: string) => {
     const timestamp = new Date().toLocaleString()
     const itemsHtml = currentOrder.map(item => `
@@ -604,8 +577,8 @@ export default function POSPage() {
     `
   }
 
-  const filteredOrders = orders.filter(order => 
-    orderFilter === 'all' || order.status === orderFilter
+  const filteredOrders = orders.filter((o: Order) => 
+    orderFilter === 'all' || o.status === orderFilter
   )
 
   const formatCurrency = (amount: number) => {
@@ -948,7 +921,7 @@ export default function POSPage() {
                     <select
                     value={orderFilter}
                     onChange={(e) => setOrderFilter(e.target.value as any)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"  // add text-gray-800
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                   >
                     <option value="all">All Orders</option>
                     <option value="pending">Pending</option>
