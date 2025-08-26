@@ -6,6 +6,7 @@ export interface Product {
     category: string
     image_url?: string
     is_available: boolean
+    stock?: number
   }
   
   export interface OrderItem {
@@ -28,6 +29,8 @@ export interface Product {
     customer_phone?: string
     order_items: OrderItem[]
     created_at: string
+    order_type?: string        // Add this
+    table_number?: string      // Add this
   }
   
   export type PaymentMethod = 'cash' | 'card'
