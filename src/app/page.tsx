@@ -481,73 +481,73 @@ export default function POSPage() {
   }
 
   const sendReceipt = async () => {
-    const sendReceipt = async () => {
-      if (currentOrder.length === 0) return
+    if (currentOrder.length === 0) return
+    
+    setProcessingState({
+      isProcessing: true,
+      isSuccess: false,
+      isError: false,
+      message: 'Generating receipt...'
+    })
+    
+    try {
+      const orderNumber = generateOrderNumber()
+      const html = generateReceiptHtml(orderNumber)
+    
+      // Open printable receipt
+      const printWin = window.open('', '_blank')
+      if (printWin) {
+        printWin.document.open()
+        printWin.document.write(html)
+        printWin.document.close()
+      }
+    
+      // Also download a copy as .txt for records
+      const txt = [
+        `Restaurant Receipt`,
+        `Order #: ${orderNumber}`,
+        `Date: ${new Date().toLocaleString()}`,
+        `Payment: ${paymentMethod.toUpperCase()}`,
+        `Order Type: ${orderType.replace('-', ' ')}`,
+        `${orderType === 'dine-in' ? `Table: ${tableNumber || 'N/A'}` : ''}`,
+        ``,
+        ...currentOrder.map(i => `${i.product.name} x${i.quantity} - $${i.total_price.toFixed(2)}`),
+        ``,
+        `TOTAL: $${getTotalAmount().toFixed(2)}`
+      ].filter(Boolean).join('\n')
+    
+      const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `receipt-${orderNumber}.txt`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
     
       setProcessingState({
-        isProcessing: true,
-        isSuccess: false,
+        isProcessing: false,
+        isSuccess: true,
         isError: false,
-        message: 'Generating receipt...'
+        message: 'Receipt opened for print and downloaded.'
       })
     
-      try {
-        const orderNumber = generateOrderNumber()
-        const html = generateReceiptHtml(orderNumber)
-    
-        // Open printable receipt
-        const printWin = window.open('', '_blank')
-        if (printWin) {
-          printWin.document.open()
-          printWin.document.write(html)
-          printWin.document.close()
-        }
-    
-        // Also download a copy as .txt for records
-        const txt = [
-          `Restaurant Receipt`,
-          `Order #: ${orderNumber}`,
-          `Date: ${new Date().toLocaleString()}`,
-          `Payment: ${paymentMethod.toUpperCase()}`,
-          ``,
-          ...currentOrder.map(i => `${i.product.name} x${i.quantity} - $${i.total_price.toFixed(2)}`),
-          ``,
-          `TOTAL: $${getTotalAmount().toFixed(2)}`
-        ].join('\n')
-    
-        const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `receipt-${orderNumber}.txt`
-        document.body.appendChild(a)
-        a.click()
-        a.remove()
-        URL.revokeObjectURL(url)
-    
-        setProcessingState({
-          isProcessing: false,
-          isSuccess: true,
-          isError: false,
-          message: 'Receipt opened for print and downloaded.'
-        })
-    
-        // Optional: keep order; or clear after a moment
-        setTimeout(() => {
-          setProcessingState({ isProcessing: false, isSuccess: false, isError: false, message: '' })
-        }, 2500)
-      } catch (e) {
-        console.error('Receipt generation error:', e)
-        setProcessingState({
-          isProcessing: false,
-          isSuccess: false,
-          isError: true,
-          message: 'Failed to generate receipt.'
-        })
-        setTimeout(() => {
-          setProcessingState({ isProcessing: false, isSuccess: false, isError: false, message: '' })
-        }, 2500)
-      }
+      // Optional: keep order; or clear after a moment
+      setTimeout(() => {
+        setProcessingState({ isProcessing: false, isSuccess: false, isError: false, message: '' })
+      }, 2500)
+    } catch (e) {
+      console.error('Receipt generation error:', e)
+      setProcessingState({
+        isProcessing: false,
+        isSuccess: false,
+        isError: true,
+        message: 'Failed to generate receipt.'
+      })
+      setTimeout(() => {
+        setProcessingState({ isProcessing: false, isSuccess: false, isError: false, message: '' })
+      }, 2500)
     }
   }
 
@@ -740,7 +740,7 @@ export default function POSPage() {
            {/* Right Side - Order Summary */}
            <div className="w-96 bg-white shadow-lg p-6 flex flex-col">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Current Order</h2>
+                <h2 className="text-xl font-bold text-gray-800 w-full text-center">Current Order</h2>
                 <ShoppingCart className="text-gray-600" />
               </div>
                   {/* Order Items */}
@@ -770,8 +770,8 @@ export default function POSPage() {
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-800 truncate">{item.product.name}</div>
-                        <div className="text-sm text-gray-600">${item.product.price.toFixed(2)} each</div>
+                        <div className="font-semibold text-gray-900 truncate">{item.product.name}</div>
+                        <div className="text-sm text-gray-700">${item.product.price.toFixed(2)} each</div>
                       </div>
                       
                       <div className="flex items-center gap-1">
@@ -784,7 +784,7 @@ export default function POSPage() {
                         >
                           <Minus size={14} />
                         </button>
-                        <span className="w-8 text-center font-medium text-sm">{item.quantity}</span>
+                        <span className="w-10 text-center font-semibold text-base text-gray-900">{item.quantity}</span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
@@ -811,11 +811,23 @@ export default function POSPage() {
 
               {/* Total */}
               <div className="border-t pt-4 mb-6">
-                <div className="flex justify-between text-xl font-bold text-gray-800">
-                  <span>Total:</span>
-                  <span>${getTotalAmount().toFixed(2)}</span>
+                <div className="text-xl font-bold text-gray-800 text-center">
+                  <span>Total: ${getTotalAmount().toFixed(2)}</span>
                 </div>
               </div>
+
+              {(orderType === 'dine-in' && tableNumber) && (
+                <div className="mb-4 text-sm text-gray-700">
+                  <div className="flex justify-between">
+                    <span className="font-medium">Order Type</span>
+                    <span className="capitalize">{orderType.replace('-', ' ')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Table</span>
+                    <span>{tableNumber}</span>
+                  </div>
+                </div>
+              )}
 
               {/* Processing Status */}
               {processingState.isProcessing && (
@@ -946,6 +958,8 @@ export default function POSPage() {
                 </div>
               </div>
 
+
+
                    
               <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
@@ -955,6 +969,14 @@ export default function POSPage() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Order #
                         </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Type
+                        </th>
+                        {orderType === 'dine-in' && (
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Table
+                          </th>
+                        )}
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Date
                         </th>
@@ -975,6 +997,18 @@ export default function POSPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {order.order_number}
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">
+                            {order.order_type || 'dine-in'}
+                          </td>
+                          {(order.order_type === 'dine-in') ? (
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {order.table_number || 'N/A'}
+                            </td>
+                          ) : (
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              —
+                            </td>
+                          )}
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {formatDate(order.created_at)}
                           </td>
