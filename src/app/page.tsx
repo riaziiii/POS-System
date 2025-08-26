@@ -154,7 +154,7 @@ export default function POSPage() {
       name: 'Chicken Wings', 
       price: 11.99, 
       category: 'main',
-      image_url: 'https://images.unsplash.com/photo-1567620832903-9e6d124101b4?w=400&h=300&fit=crop',
+      image_url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=300&fit=crop',
       description: 'Spicy buffalo wings',
       stock: 40,
       is_available: true
@@ -164,7 +164,7 @@ export default function POSPage() {
       name: 'Onion Rings', 
       price: 5.99, 
       category: 'sides',
-      image_url: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=400&h=300&fit=crop',
+      image_url: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop',
       description: 'Crispy battered onion rings',
       stock: 60,
       is_available: true
@@ -427,9 +427,10 @@ export default function POSPage() {
             return
           }
           console.log('Order saved:', data)
-        } catch (e: any) {
+        } catch (e: unknown) {
           console.error('Supabase exception:', e)
-          alert(`Insert threw exception: ${e?.message || e}`)
+          const msg = e instanceof Error ? e.message : String(e)
+          alert(`Insert threw exception: ${msg}`)
           return
         }
       } else {
@@ -1010,7 +1011,7 @@ export default function POSPage() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <select
                             value={order.status}
-                            onChange={(e) => updateOrderStatus(order.id, e.target.value as any)}
+                            onChange={(e) => updateOrderStatus(order.id, e.target.value as 'pending' | 'completed' | 'cancelled')}
                            className={`px-2 py-1 rounded-md text-sm border ${
                               order.status === 'completed' 
                                 ? 'bg-green-100 text-green-800 border-green-200'
