@@ -351,7 +351,6 @@ export default function POSPage() {
 
   const updateOrderStatus = async (orderId: string, status: 'pending' | 'completed' | 'cancelled') => {
     try {
-      if (supabase) {
         const { error } = await supabase
           .from('orders')
           .update({ status })
@@ -359,11 +358,10 @@ export default function POSPage() {
 
         if (error) {
           console.error('Error updating order status:', error)
-        } else {
-          loadOrders()
-          loadAnalytics()
-        }
+        return
       }
+      await loadOrders()
+      await loadAnalytics()
     } catch (error) {
       console.error('Error updating order status:', error)
     }
@@ -476,11 +474,125 @@ export default function POSPage() {
   }
 
   const sendReceipt = async () => {
-    // ... existing sendReceipt implementation ...
+    const sendReceipt = async () => {
+      if (currentOrder.length === 0) return
+    
+      setProcessingState({
+        isProcessing: true,
+        isSuccess: false,
+        isError: false,
+        message: 'Generating receipt...'
+      })
+    
+      try {
+        const orderNumber = generateOrderNumber()
+        const html = generateReceiptHtml(orderNumber)
+    
+        // Open printable receipt
+        const printWin = window.open('', '_blank')
+        if (printWin) {
+          printWin.document.open()
+          printWin.document.write(html)
+          printWin.document.close()
+        }
+    
+        // Also download a copy as .txt for records
+        const txt = [
+          `Restaurant Receipt`,
+          `Order #: ${orderNumber}`,
+          `Date: ${new Date().toLocaleString()}`,
+          `Payment: ${paymentMethod.toUpperCase()}`,
+          ``,
+          ...currentOrder.map(i => `${i.product.name} x${i.quantity} - $${i.total_price.toFixed(2)}`),
+          ``,
+          `TOTAL: $${getTotalAmount().toFixed(2)}`
+        ].join('\n')
+    
+        const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `receipt-${orderNumber}.txt`
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        URL.revokeObjectURL(url)
+    
+        setProcessingState({
+          isProcessing: false,
+          isSuccess: true,
+          isError: false,
+          message: 'Receipt opened for print and downloaded.'
+        })
+    
+        // Optional: keep order; or clear after a moment
+        setTimeout(() => {
+          setProcessingState({ isProcessing: false, isSuccess: false, isError: false, message: '' })
+        }, 2500)
+      } catch (e) {
+        console.error('Receipt generation error:', e)
+        setProcessingState({
+          isProcessing: false,
+          isSuccess: false,
+          isError: true,
+          message: 'Failed to generate receipt.'
+        })
+        setTimeout(() => {
+          setProcessingState({ isProcessing: false, isSuccess: false, isError: false, message: '' })
+        }, 2500)
+      }
+    }
   }
 
   const generateReceiptContent = () => {
     // ... existing generateReceiptContent implementation ...
+  }
+
+  const generateReceiptHtml = (orderNumber: string) => {
+    const timestamp = new Date().toLocaleString()
+    const itemsHtml = currentOrder.map(item => `
+      <tr>
+        <td style="padding:4px 0;">${item.product.name} x${item.quantity}</td>
+        <td style="text-align:right;">$${item.total_price.toFixed(2)}</td>
+      </tr>
+    `).join('')
+  
+    return `
+      <html>
+        <head>
+          <title>Receipt ${orderNumber}</title>
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <style>
+            body{font-family:Arial, sans-serif; padding:16px; color:#111}
+            h1{font-size:18px;margin-bottom:8px}
+            .muted{color:#555;font-size:12px}
+            table{width:100%; border-collapse:collapse; margin-top:12px}
+            tfoot td{font-weight:bold; border-top:1px solid #ddd; padding-top:8px}
+          </style>
+        </head>
+        <body>
+          <h1>Restaurant Receipt</h1>
+          <div class="muted">Order #: ${orderNumber}</div>
+          <div class="muted">Date: ${timestamp}</div>
+          <div class="muted">Payment: ${paymentMethod.toUpperCase()}</div>
+          <table>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>Total</td>
+                <td style="text-align:right;">$${getTotalAmount().toFixed(2)}</td>
+              </tr>
+            </tfoot>
+          </table>
+          <p class="muted">Thank you!</p>
+          <script>
+            window.onload = () => { window.print(); }
+          </script>
+        </body>
+      </html>
+    `
   }
 
   const filteredOrders = orders.filter(order => 
@@ -777,15 +889,15 @@ export default function POSPage() {
         )}
 
         {viewMode === 'orders' && (
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div className="flex-1 p-6 overflow-y-auto text-gray-800">
             <div className="max-w-6xl mx-auto">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">Order Management</h2>
                 <div className="flex gap-2">
-                  <select
+                    <select
                     value={orderFilter}
                     onChange={(e) => setOrderFilter(e.target.value as any)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"  // add text-gray-800
                   >
                     <option value="all">All Orders</option>
                     <option value="pending">Pending</option>
@@ -795,6 +907,7 @@ export default function POSPage() {
                 </div>
               </div>
 
+                   
               <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -830,15 +943,21 @@ export default function POSPage() {
                             {formatCurrency(order.total_amount)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            <select
+                            value={order.status}
+                            onChange={(e) => updateOrderStatus(order.id, e.target.value as any)}
+                           className={`px-2 py-1 rounded-md text-sm border ${
                               order.status === 'completed' 
-                                ? 'bg-green-100 text-green-800'
+                                ? 'bg-green-100 text-green-800 border-green-200'
                                 : order.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}>
-                              {order.status}
-                            </span>
+                                ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                                : 'bg-red-100 text-red-800 border-red-200'
+                            }`}
+                            >
+                             <option value="pending">pending</option>
+                             <option value="completed">completed</option>
+                             <option value="cancelled">cancelled</option>
+                             </select>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex gap-2">
@@ -869,7 +988,8 @@ export default function POSPage() {
             </div>
           </div>
         )}
-
+        
+        
         {viewMode === 'analytics' && (
           <div className="flex-1 p-6 overflow-y-auto">
             <div className="max-w-6xl mx-auto">
