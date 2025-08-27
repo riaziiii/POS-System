@@ -683,7 +683,7 @@ export default function POSPage() {
               </div>
 
               {/* Products Grid */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">  {/* Responsive grid */}
                 {filteredProducts.map(product => (
                   <button
                     key={product.id}
@@ -737,17 +737,17 @@ export default function POSPage() {
                 <ShoppingCart className="text-gray-600" />
               </div>
                   {/* Order Items */}
-              <div className="flex-1 space-y-3 mb-6 overflow-y-auto">
+              <div className="flex-1 space-y-4 mb-6 overflow-y-auto">
                 {currentOrder.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <ShoppingCart className="mx-auto mb-2" size={32} />
-                    <p>No items in order</p>
+                  <div className="text-center py-10 text-gray-500">
+                    <ShoppingCart className="mx-auto mb-3" size={36} />
+                    <p className="text-base">No items in order</p>
                   </div>
                 ) : (
                   currentOrder.map(item => (
-                    <div key={item.product.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div key={item.product.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                       {/* Product Image in Order */}
-                      <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0">
                         {item.product.image_url ? (
                           <Image
                             src={item.product.image_url}
@@ -757,44 +757,44 @@ export default function POSPage() {
                           />
                         ) : (
                           <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                            <ImageIcon className="text-gray-400" size={16} />
+                            <ImageIcon className="text-gray-400" size={18} />
                           </div>
                         )}
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-gray-900 truncate">{item.product.name}</div>
+                        <div className="font-semibold text-gray-900 truncate text-base">{item.product.name}</div>
                         <div className="text-sm text-gray-700">${item.product.price.toFixed(2)} each</div>
                       </div>
                       
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
                             updateQuantity(item.product.id, item.quantity - 1)
                           }}
-                          className="w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                          className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
                         >
-                          <Minus size={14} />
+                          <Minus size={16} />
                         </button>
-                        <span className="w-10 text-center font-semibold text-base text-gray-900">{item.quantity}</span>
+                        <span className="w-12 text-center font-semibold text-base text-gray-900">{item.quantity}</span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
                             updateQuantity(item.product.id, item.quantity + 1)
                           }}
-                          className="w-7 h-7 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition-colors"
+                          className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition-colors"
                         >
-                          <Plus size={14} />
+                          <Plus size={16} />
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
                             removeFromOrder(item.product.id)
                           }}
-                          className="w-7 h-7 rounded-full bg-gray-500 text-white flex items-center justify-center hover:bg-gray-600 transition-colors"
+                          className="w-8 h-8 rounded-full bg-gray-500 text-white flex items-center justify-center hover:bg-gray-600 transition-colors"
                         >
-                          <X size={14} />
+                          <X size={16} />
                         </button>
                       </div>
                     </div>
@@ -803,8 +803,8 @@ export default function POSPage() {
               </div>
 
               {/* Total */}
-              <div className="border-t pt-4 mb-6">
-                <div className="text-xl font-bold text-gray-800 text-center">
+              <div className="border-t pt-5 mb-6">
+                <div className="text-2xl font-bold text-gray-800 text-center">
                   <span>Total: ${getTotalAmount().toFixed(2)}</span>
                 </div>
               </div>
@@ -851,14 +851,14 @@ export default function POSPage() {
               )}
 
               {/* Order Type */}
-              <div className="mb-6">
-                <h3 className="font-medium text-gray-700 mb-3">Order Type</h3>
-                <div className="flex gap-2">
+              <div className="mb-3">
+                <h3 className="font-medium text-gray-700 mb-1.5 text-xs">Order Type</h3>
+                <div className="flex gap-1">
                   {(['dine-in', 'take-out'] as const).map(type => (
                     <button
                       key={type}
                       onClick={() => setOrderType(type)}
-                      className={`flex-1 py-2 px-3 rounded-lg font-medium capitalize transition-colors ${
+                      className={`flex-1 py-1 px-1.5 rounded text-xs font-medium capitalize transition-colors ${
                         orderType === type ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
@@ -868,27 +868,27 @@ export default function POSPage() {
                 </div>
 
                 {orderType === 'dine-in' && (
-                  <div className="mt-3">
-                    <label className="block text-sm text-gray-600 mb-1">Table Number (optional)</label>
+                  <div className="mt-1.5">
+                    <label className="block text-xs text-gray-600 mb-0.5">Table Number (optional)</label>
                     <input
                       value={tableNumber}
                       onChange={(e) => setTableNumber(e.target.value)}
                       placeholder="e.g. 12"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                      className="w-full px-1.5 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-800"
                     />
                   </div>
                 )}
               </div>
 
               {/* Payment Methods */}
-              <div className="mb-6">
-                <h3 className="font-medium text-gray-700 mb-3">Payment Method</h3>
+              <div className="mb-4">
+                <h3 className="font-medium text-gray-700 mb-2 text-sm">Payment Method</h3>
                 <div className="flex gap-2">
                   {(['cash', 'card'] as const).map(method => (
                     <button
                       key={method}
                       onClick={() => setPaymentMethod(method)}
-                      className={`flex-1 py-2 px-3 rounded-lg font-medium capitalize transition-colors ${
+                      className={`flex-1 py-1.5 px-2 rounded-lg font-medium capitalize transition-colors text-sm ${
                         paymentMethod === method
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -901,16 +901,16 @@ export default function POSPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <button
                   onClick={processPayment}
                   disabled={currentOrder.length === 0 || processingState.isProcessing}
-                  className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+                  className="w-full bg-green-600 text-white py-2.5 rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors text-base"
                 >
                   {processingState.isProcessing ? (
-                    <Loader2 className="animate-spin" size={20} />
+                    <Loader2 className="animate-spin" size={18} />
                   ) : (
-                    <CreditCard size={20} />
+                    <CreditCard size={18} />
                   )}
                   {processingState.isProcessing ? 'Processing...' : 'Process Payment'}
                 </button>
@@ -921,9 +921,9 @@ export default function POSPage() {
                   className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
                 >
                   {processingState.isProcessing ? (
-                    <Loader2 className="animate-spin" size={20} />
+                    <Loader2 className="animate-spin" size={18} />
                   ) : (
-                    <Receipt size={20} />
+                    <Receipt size={18} />
                   )}
                   {processingState.isProcessing ? 'Generating...' : 'Send Receipt'}
                 </button>
