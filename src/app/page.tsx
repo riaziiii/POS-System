@@ -15,7 +15,8 @@ import {
   TrendingUp,
   DollarSign,
   Package,
-  Users
+  Users,
+  Star
 } from 'lucide-react'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
@@ -30,6 +31,7 @@ interface Product {
   description?: string
   stock?: number
   is_available?: boolean
+  best_seller?: boolean
 }
 
 interface OrderItem {
@@ -71,6 +73,7 @@ export default function POSPage() {
   const [orderType, setOrderType]= useState<'dine-in' | 'take-out'>('dine-in')
   const [tableNumber, setTableNumber] = useState<string>('')
   const [analytics, setAnalytics] = useState<Analytics>({
+  
     totalSales: 0,
     totalOrders: 0,
     averageOrderValue: 0,
@@ -86,6 +89,7 @@ export default function POSPage() {
   })
   const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'completed' | 'cancelled'>('all')
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month'>('today')
+  const [showBestSellers, setShowBestSellers] = useState(false)
 
   // Sample products with images - you'll replace this with data from Supabase
   const products: Product[] = [
@@ -97,7 +101,8 @@ export default function POSPage() {
       image_url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop',
       description: 'Juicy beef patty with fresh vegetables',
       stock: 50,
-      is_available: true
+      is_available: true,
+      best_seller: true
     },
     { 
       id: '2', 
@@ -107,7 +112,8 @@ export default function POSPage() {
       image_url: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&h=300&fit=crop',
       description: 'Golden crispy french fries',
       stock: 100,
-      is_available: true
+      is_available: true,
+      best_seller: false
     },
     { 
       id: '3', 
@@ -117,7 +123,8 @@ export default function POSPage() {
       image_url: 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=400&h=300&fit=crop',
       description: 'Refreshing cold beverage',
       stock: 200,
-      is_available: true
+      is_available: true,
+      best_seller: false
     },
     { 
       id: '4', 
@@ -127,7 +134,8 @@ export default function POSPage() {
       image_url: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=400&h=300&fit=crop',
       description: 'Fresh mozzarella and basil',
       stock: 30,
-      is_available: true
+      is_available: true,
+      best_seller: true
     },
     { 
       id: '5', 
@@ -137,7 +145,8 @@ export default function POSPage() {
       image_url: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400&h=300&fit=crop',
       description: 'Fresh romaine with caesar dressing',
       stock: 25,
-      is_available: true
+      is_available: true,
+      best_seller: false
     },
     { 
       id: '6', 
@@ -147,7 +156,8 @@ export default function POSPage() {
       image_url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&h=300&fit=crop',
       description: 'Rich and aromatic coffee',
       stock: 150,
-      is_available: true
+      is_available: true,
+      best_seller: false
     },
     { 
       id: '7', 
@@ -157,7 +167,8 @@ export default function POSPage() {
       image_url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=300&fit=crop',
       description: 'Spicy buffalo wings',
       stock: 40,
-      is_available: true
+      is_available: true,
+      best_seller: true
     },
     { 
       id: '8', 
@@ -167,7 +178,8 @@ export default function POSPage() {
       image_url: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop',
       description: 'Crispy battered onion rings',
       stock: 60,
-      is_available: true
+      is_available: true,
+      best_seller: false
     },
     { 
       id: '9', 
@@ -177,11 +189,12 @@ export default function POSPage() {
       image_url: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&h=300&fit=crop',
       description: 'Refreshing iced tea',
       stock: 120,
-      is_available: true
+      is_available: true,
+      best_seller: false
     }
   ]
 
-  const categories = ['all', 'main', 'sides', 'drinks']
+  const categories = ['all','main', 'sides', 'drinks']
 
     // Add these missing helper functions
     const addToOrder = (product: Product) => {
@@ -225,6 +238,10 @@ export default function POSPage() {
     const filteredProducts = selectedCategory === 'all' 
       ? products 
       : products.filter(product => product.category === selectedCategory)
+
+    const finalProducts = showBestSellers
+      ? filteredProducts.filter(p => p.best_seller)
+      : filteredProducts
   
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
@@ -680,11 +697,20 @@ export default function POSPage() {
                     {category}
                   </button>
                 ))}
+                <button
+                  onClick={() => setShowBestSellers(v => !v)}
+                  className={`px-3 py-2 rounded-lg font-medium transition-colors ml-auto ${
+                    showBestSellers ? 'bg-amber-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                  title="Show Best Sellers only"
+                >
+                  Best Sellers
+                </button>
               </div>
 
               {/* Products Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">  {/* Responsive grid */}
-                {filteredProducts.map(product => (
+                {finalProducts.map(product => (
                   <button
                     key={product.id}
                     onClick={() => addToOrder(product)}
@@ -693,6 +719,12 @@ export default function POSPage() {
                   >
                     {/* Product Image */}
                     <div className="relative h-32 overflow-hidden">
+                      {product.best_seller && (
+                        <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-amber-500/90 backdrop-blur-sm text-white rounded-full px-2 py-0.5">
+                          <Star size={12} className="text-white" />
+                          <span className="text-[10px] font-semibold leading-none">Best Seller</span>
+                        </div>
+                      )}
                       {product.image_url ? (
                         <Image
                           src={product.image_url}
