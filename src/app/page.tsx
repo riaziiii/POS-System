@@ -1212,7 +1212,7 @@ export default function POSPage() {
                               </div>
                               <div className="text-right">
                                 <div className="text-sm font-medium text-gray-900">{formatCurrency(category.sales)}</div>
-                                <div className="text-xs text-gray-500">{category.orders} orders</div>
+                                <div className="text-xs text-gray-500">Revenue</div>
                               </div>
                             </div>
                           ))}
