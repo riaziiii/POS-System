@@ -1200,16 +1200,34 @@ export default function POSPage() {
                                 {order.order_items.length} items
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₱${order.total_amount.toFixed(2)}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                  order.status === 'completed' 
-                                    ? 'bg-green-100 text-green-800'
-                                    : order.status === 'pending'
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {order.status}
-                                </span>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button
+                                  onClick={() => {
+                                    const currentStatus = order.status
+                                    let newStatus: 'pending' | 'completed' | 'cancelled'
+                                    
+                                    if (currentStatus === 'pending') {
+                                      newStatus = 'completed'
+                                    } else if (currentStatus === 'completed') {
+                                      newStatus = 'cancelled'
+                                    } else {
+                                      newStatus = 'pending'
+                                    }
+                                    
+                                    updateOrderStatus(order.id, newStatus)
+                                  }}
+                                  className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                                    order.status === 'pending' 
+                                      ? 'bg-yellow-500 text-white hover:bg-yellow-600' 
+                                      : order.status === 'completed'
+                                      ? 'bg-green-500 text-white hover:bg-green-600'
+                                      : 'bg-red-500 text-white hover:bg-red-600'
+                                  }`}
+                                >
+                                  {order.status === 'pending' ? 'Complete' : 
+                                   order.status === 'completed' ? 'Cancelled' : 
+                                   'Pending'}
+                                </button>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {formatDate(order.created_at)}
