@@ -173,7 +173,7 @@ export default function POSPage() {
     { 
       id: '1', 
       name: 'Classic Burger', 
-      price: 12.99, 
+      price: 199.00, // ₱199 (Philippine peso pricing)
       category: 'main',
       image_url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop',
       description: 'Juicy beef patty with fresh vegetables',
@@ -184,7 +184,7 @@ export default function POSPage() {
     { 
       id: '2', 
       name: 'French Fries', 
-      price: 4.99, 
+      price: 89.00, // ₱89
       category: 'sides',
       image_url: 'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=400&h=300&fit=crop',
       description: 'Crispy golden fries',
@@ -195,7 +195,7 @@ export default function POSPage() {
     { 
       id: '3', 
       name: 'Caesar Salad', 
-      price: 8.99, 
+      price: 149.00, // ₱149
       category: 'main',
       image_url: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400&h=300&fit=crop',
       description: 'Fresh romaine lettuce with caesar dressing',
@@ -206,7 +206,7 @@ export default function POSPage() {
     { 
       id: '4', 
       name: 'Coca Cola', 
-      price: 2.99, 
+      price: 45.00, // ₱45
       category: 'drinks',
       image_url: 'https://images.unsplash.com/photo-1581636625402-29b2a704ef13?w=400&h=300&fit=crop',
       description: 'Refreshing cola drink',
@@ -217,7 +217,7 @@ export default function POSPage() {
     { 
       id: '5', 
       name: 'Chocolate Cake', 
-      price: 6.99, 
+      price: 129.00, // ₱129
       category: 'dessert',
       image_url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop',
       description: 'Rich chocolate cake slice',
@@ -228,7 +228,7 @@ export default function POSPage() {
     { 
       id: '6', 
       name: 'Espresso Coffee', 
-      price: 3.99, 
+      price: 75.00, // ₱75
       category: 'drinks',
       image_url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&h=300&fit=crop',
       description: 'Rich and aromatic coffee',
@@ -239,7 +239,7 @@ export default function POSPage() {
     { 
       id: '7', 
       name: 'Chicken Wings', 
-      price: 11.99, 
+      price: 179.00, // ₱179
       category: 'main',
       image_url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=300&fit=crop',
       description: 'Spicy buffalo wings',
@@ -250,7 +250,7 @@ export default function POSPage() {
     { 
       id: '8', 
       name: 'Onion Rings', 
-      price: 5.99, 
+      price: 99.00, // ₱99
       category: 'sides',
       image_url: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop',
       description: 'Crispy battered onion rings',
@@ -261,7 +261,7 @@ export default function POSPage() {
     { 
       id: '9', 
       name: 'Iced Tea', 
-      price: 2.49, 
+      price: 39.00, // ₱39
       category: 'drinks',
       image_url: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&h=300&fit=crop',
       description: 'Refreshing iced tea',
@@ -615,9 +615,9 @@ export default function POSPage() {
         `Order Type: ${orderType.replace('-', ' ')}`,
         `${orderType === 'dine-in' ? `Table: ${tableNumber || 'N/A'}` : ''}`,
         ``,
-        ...currentOrder.map(i => `${i.product.name} x${i.quantity} - $${i.total_price.toFixed(2)}`),
+        ...currentOrder.map(i => `${i.product.name} x${i.quantity} - ₱${i.total_price.toFixed(2)}`),
         ``,
-        `TOTAL: $${getTotalAmount().toFixed(2)}`
+        `TOTAL: ₱${getTotalAmount().toFixed(2)}`
       ].filter(Boolean).join('\n')
     
       const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' })
@@ -660,7 +660,7 @@ export default function POSPage() {
     const itemsHtml = currentOrder.map(item => `
       <tr>
         <td style="padding:4px 0;">${item.product.name} x${item.quantity}</td>
-        <td style="text-align:right;">$${item.total_price.toFixed(2)}</td>
+        <td style="text-align:right;">₱${item.total_price.toFixed(2)}</td>
       </tr>
     `).join('')
   
@@ -691,7 +691,7 @@ export default function POSPage() {
             <tfoot>
               <tr>
                 <td>Total</td>
-                <td style="text-align:right;">$${getTotalAmount().toFixed(2)}</td>
+                <td style="text-align:right;">₱${getTotalAmount().toFixed(2)}</td>
               </tr>
             </tfoot>
           </table>
@@ -971,7 +971,7 @@ export default function POSPage() {
                               <div className="text-xs text-gray-600 mb-2 line-clamp-2">{product.description}</div>
                             )}
                             <div className="flex justify-between items-center">
-                              <div className="text-green-600 font-medium text-sm">${product.price.toFixed(2)}</div>
+                              <div className="text-green-600 font-medium text-sm">₱{product.price.toFixed(2)}</div>
                               {product.stock !== undefined && (
                                 <div className="text-xs text-gray-500">Stock: {product.stock}</div>
                               )}
@@ -1051,7 +1051,7 @@ export default function POSPage() {
                             <div key={index} className="flex items-center justify-between p-1.5 bg-gray-50 border-b border-gray-200">
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium text-gray-900 text-xs leading-tight">{item.product.name}</div>
-                                <div className="text-xs text-gray-600 leading-tight">${item.product.price.toFixed(2)} × {item.quantity} = ${(item.quantity * item.product.price).toFixed(2)}</div>
+                                <div className="text-xs text-gray-600 leading-tight">₱${item.product.price.toFixed(2)} × {item.quantity} = ₱${(item.quantity * item.product.price).toFixed(2)}</div>
                               </div>
                               <div className="flex items-center space-x-0.5 flex-shrink-0">
                                 <button
@@ -1087,7 +1087,7 @@ export default function POSPage() {
                       <div className="bg-white rounded p-2 border border-gray-200">
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-medium text-gray-800">Total:</span>
-                          <span className="text-sm font-bold text-green-600">${getTotalAmount().toFixed(2)}</span>
+                          <span className="text-sm font-bold text-green-600">₱${getTotalAmount().toFixed(2)}</span>
                         </div>
                         {currentOrder.length > 0 && (
                           <div className="text-xs text-gray-500 mt-0.5 flex justify-between">
@@ -1199,7 +1199,7 @@ export default function POSPage() {
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {order.order_items.length} items
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${order.total_amount.toFixed(2)}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₱${order.total_amount.toFixed(2)}</td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                   order.status === 'completed' 
@@ -1374,7 +1374,7 @@ export default function POSPage() {
                                 <td className="py-2 text-sm text-gray-600">
                                   {order.customer_email || order.customer_phone || 'Walk-in'}
                                 </td>
-                                <td className="py-2 text-sm text-gray-900">{formatCurrency(order.total_amount)}</td>
+                                <td className="py-2 text-sm text-gray-900">₱{order.total_amount.toFixed(2)}</td>
                                 <td className="py-2">
                                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                     order.status === 'completed' 
@@ -1479,7 +1479,7 @@ export default function POSPage() {
                             <h3 className="font-semibold text-gray-900">{product.name}</h3>
                             <p className="text-sm text-gray-600">{product.description}</p>
                             <div className="flex items-center justify-between">
-                              <span className="text-lg font-bold text-green-600">${product.price.toFixed(2)}</span>
+                              <span className="text-lg font-bold text-green-600">₱{product.price.toFixed(2)}</span>
                               <span className="text-sm text-gray-500">Stock: {product.stock}</span>
                             </div>
                             <div className="text-xs text-gray-500 capitalize">{product.category}</div>
