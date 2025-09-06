@@ -25,7 +25,8 @@ import {
   ShoppingBag,
   Edit,
   Save,
-  Upload
+  Upload,
+  Download
 } from 'lucide-react'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
@@ -782,6 +783,48 @@ export default function POSPage() {
     ))
   }
 
+  // CSV Download function
+  const downloadProductsCSV = () => {
+    const csvHeaders = [
+      'ID',
+      'Name',
+      'Price',
+      'Category',
+      'Description',
+      'Stock',
+      'Available',
+      'Best Seller',
+      'Image URL'
+    ]
+
+    const csvData = products.map(product => [
+      product.id,
+      product.name,
+      product.price,
+      product.category,
+      product.description || '',
+      product.stock || 0,
+      product.is_available ? 'Yes' : 'No',
+      product.best_seller ? 'Yes' : 'No',
+      product.image_url || ''
+    ])
+
+    const csvContent = [
+      csvHeaders.join(','),
+      ...csvData.map(row => row.map(field => `"${field}"`).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `products_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <PinAuthGuard>
       <div className="min-h-screen bg-gray-50">
@@ -1387,13 +1430,22 @@ export default function POSPage() {
                         <h2 className="text-lg font-semibold text-gray-900">Product Management</h2>
                         <p className="text-sm text-gray-600">Manage your menu items and inventory</p>
                       </div>
-                      <button
-                        onClick={() => setShowAddProduct(true)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <span>Add Product</span>
-                      </button>
+                      <div className="flex items-center space-x-3">
+                        <button
+                          onClick={downloadProductsCSV}
+                          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                        >
+                          <Download className="w-4 h-4" />
+                          <span>Download CSV</span>
+                        </button>
+                        <button
+                          onClick={() => setShowAddProduct(true)}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Add Product</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
