@@ -71,28 +71,28 @@ export default function PinLogin() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-md w-full mx-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+      <div className="max-w-sm w-full mx-4">
+        <div className="bg-white rounded-lg shadow-md p-4">
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-              <Lock className="w-8 h-8 text-blue-600" />
+          <div className="text-center mb-4">
+            <div className="mx-auto w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+              <Lock className="w-5 h-5 text-blue-600" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Secure POS Access</h1>
-            <p className="text-gray-600">Enter your 6-digit PIN to continue</p>
-            <div className="flex items-center justify-center mt-2 text-sm text-gray-500">
-              <Shield className="w-4 h-4 mr-1" />
+            <h1 className="text-lg font-bold text-gray-900 mb-1">Secure POS Access</h1>
+            <p className="text-xs text-gray-600">Enter your 6-digit PIN</p>
+            <div className="flex items-center justify-center mt-1 text-xs text-gray-500">
+              <Shield className="w-3 h-3 mr-1" />
               <span>Enhanced Security</span>
             </div>
           </div>
 
           {/* PIN Display */}
-          <div className="mb-8">
-            <div className="flex justify-center space-x-2 mb-4">
+          <div className="mb-4">
+            <div className="flex justify-center space-x-1.5 mb-2">
               {[0, 1, 2, 3, 4, 5].map((index) => (
                 <div
                   key={index}
-                  className={`w-4 h-4 rounded-full border-2 ${
+                  className={`w-2.5 h-2.5 rounded-full border-2 ${
                     index < pin.length
                       ? 'bg-blue-600 border-blue-600'
                       : 'border-gray-300'
@@ -102,35 +102,35 @@ export default function PinLogin() {
             </div>
             
             {error && (
-              <div className="flex items-center justify-center space-x-2 text-red-600 text-sm">
-                <AlertCircle className="w-4 h-4" />
+              <div className="flex items-center justify-center space-x-1 text-red-600 text-xs">
+                <AlertCircle className="w-3 h-3" />
                 <span>{error}</span>
               </div>
             )}
             
             {success && (
-              <div className="flex items-center justify-center space-x-2 text-green-600 text-sm">
-                <CheckCircle className="w-4 h-4" />
+              <div className="flex items-center justify-center space-x-1 text-green-600 text-xs">
+                <CheckCircle className="w-3 h-3" />
                 <span>Login successful!</span>
               </div>
             )}
 
             {isAccountLocked && (
-              <div className="flex items-center justify-center space-x-2 text-orange-600 text-sm">
-                <Clock className="w-4 h-4" />
+              <div className="flex items-center justify-center space-x-1 text-orange-600 text-xs">
+                <Clock className="w-3 h-3" />
                 <span>Account temporarily locked</span>
               </div>
             )}
           </div>
 
           {/* Number Pad */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((number) => (
               <button
                 key={number}
                 onClick={() => handlePinChange(number.toString())}
                 disabled={isSubmitting || isAccountLocked}
-                className="w-full h-14 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-xl text-xl font-semibold text-gray-700 transition-colors disabled:opacity-50"
+                className="w-full h-10 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-md text-base font-semibold text-gray-700 transition-colors disabled:opacity-50"
               >
                 {number}
               </button>
@@ -139,7 +139,7 @@ export default function PinLogin() {
             <button
               onClick={handleClear}
               disabled={isSubmitting || isAccountLocked}
-              className="w-full h-14 bg-red-100 hover:bg-red-200 active:bg-red-300 rounded-xl text-sm font-medium text-red-700 transition-colors disabled:opacity-50"
+              className="w-full h-10 bg-red-100 hover:bg-red-200 active:bg-red-300 rounded-md text-xs font-medium text-red-700 transition-colors disabled:opacity-50"
             >
               Clear
             </button>
@@ -147,7 +147,7 @@ export default function PinLogin() {
             <button
               onClick={() => handlePinChange('0')}
               disabled={isSubmitting || isAccountLocked}
-              className="w-full h-14 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-xl text-xl font-semibold text-gray-700 transition-colors disabled:opacity-50"
+              className="w-full h-10 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-md text-base font-semibold text-gray-700 transition-colors disabled:opacity-50"
             >
               0
             </button>
@@ -155,9 +155,9 @@ export default function PinLogin() {
             <button
               onClick={handleBackspace}
               disabled={isSubmitting || isAccountLocked}
-              className="w-full h-14 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-xl text-sm font-medium text-gray-700 transition-colors disabled:opacity-50"
+              className="w-full h-10 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-md text-xs font-medium text-gray-700 transition-colors disabled:opacity-50"
             >
-              ←
+              ⌫
             </button>
           </div>
 
