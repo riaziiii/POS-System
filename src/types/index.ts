@@ -7,6 +7,7 @@ export interface Product {
     image_url?: string
     is_available: boolean
     stock?: number
+    best_seller?: boolean
   }
   
   export interface OrderItem {
