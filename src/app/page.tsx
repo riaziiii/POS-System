@@ -22,7 +22,10 @@ import {
   Settings,
   Shield,
   Trash2,
-  ShoppingBag
+  ShoppingBag,
+  Edit,
+  Save,
+  Upload
 } from 'lucide-react'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
@@ -60,8 +63,15 @@ interface Analytics {
   totalSales: number
   totalOrders: number
   averageOrderValue: number
-  topProducts: Array<{ name: string; quantity: number; revenue: number }>
-  salesByCategory: Array<{ category: string; sales: number }>
+  topProducts: Array<{
+    name: string
+    quantity: number
+    revenue: number
+  }>
+  salesByCategory: Array<{
+    category: string
+    sales: number
+  }>
   recentOrders: Array<{
     id: string
     order_number: string
@@ -71,7 +81,7 @@ interface Analytics {
   }>
 }
 
-type ViewMode = 'pos' | 'orders' | 'analytics' | 'user-admin'
+type ViewMode = 'pos' | 'orders' | 'analytics' | 'user-admin' | 'products'
 
 function UserMenu() {
   const { user, logout } = usePinAuth()
@@ -140,7 +150,6 @@ export default function POSPage() {
   const [orderType, setOrderType]= useState<'dine-in' | 'take-out'>('dine-in')
   const [tableNumber, setTableNumber] = useState<string>('')
   const [analytics, setAnalytics] = useState<Analytics>({
-  
     totalSales: 0,
     totalOrders: 0,
     averageOrderValue: 0,
@@ -157,9 +166,9 @@ export default function POSPage() {
   const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'completed' | 'cancelled'>('all')
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month'>('today')
   const [showBestSellers, setShowBestSellers] = useState(false)
-
-  // Sample products with images - you'll replace this with data from Supabase
-  const products: Product[] = [
+  
+  // Product management states
+  const [products, setProducts] = useState<Product[]>([
     { 
       id: '1', 
       name: 'Classic Burger', 
@@ -173,44 +182,44 @@ export default function POSPage() {
     },
     { 
       id: '2', 
-      name: 'Crispy Fries', 
+      name: 'French Fries', 
       price: 4.99, 
       category: 'sides',
-      image_url: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&h=300&fit=crop',
-      description: 'Golden crispy french fries',
+      image_url: 'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=400&h=300&fit=crop',
+      description: 'Crispy golden fries',
       stock: 100,
       is_available: true,
       best_seller: false
     },
     { 
       id: '3', 
-      name: 'Coca Cola', 
-      price: 2.99, 
-      category: 'drinks',
-      image_url: 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=400&h=300&fit=crop',
-      description: 'Refreshing cold beverage',
-      stock: 200,
+      name: 'Caesar Salad', 
+      price: 8.99, 
+      category: 'main',
+      image_url: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400&h=300&fit=crop',
+      description: 'Fresh romaine lettuce with caesar dressing',
+      stock: 30,
       is_available: true,
       best_seller: false
     },
     { 
       id: '4', 
-      name: 'Margherita Pizza', 
-      price: 15.99, 
-      category: 'main',
-      image_url: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=400&h=300&fit=crop',
-      description: 'Fresh mozzarella and basil',
-      stock: 30,
+      name: 'Coca Cola', 
+      price: 2.99, 
+      category: 'drinks',
+      image_url: 'https://images.unsplash.com/photo-1581636625402-29b2a704ef13?w=400&h=300&fit=crop',
+      description: 'Refreshing cola drink',
+      stock: 200,
       is_available: true,
-      best_seller: true
+      best_seller: false
     },
     { 
       id: '5', 
-      name: 'Caesar Salad', 
-      price: 8.99, 
-      category: 'sides',
-      image_url: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400&h=300&fit=crop',
-      description: 'Fresh romaine with caesar dressing',
+      name: 'Chocolate Cake', 
+      price: 6.99, 
+      category: 'dessert',
+      image_url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop',
+      description: 'Rich chocolate cake slice',
       stock: 25,
       is_available: true,
       best_seller: false
@@ -259,9 +268,22 @@ export default function POSPage() {
       is_available: true,
       best_seller: false
     }
-  ]
+  ])
+  
+  const [showAddProduct, setShowAddProduct] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [newProduct, setNewProduct] = useState<Partial<Product>>({
+    name: '',
+    price: 0,
+    category: 'main',
+    description: '',
+    stock: 0,
+    is_available: true,
+    best_seller: false,
+    image_url: ''
+  })
 
-  const categories = ['all','main', 'sides', 'drinks']
+  const categories = ['all', 'main', 'sides', 'drinks', 'dessert']
 
     // Add these missing helper functions
     const addToOrder = (product: Product) => {
@@ -702,6 +724,64 @@ export default function POSPage() {
     })
   }
 
+  // Product management functions
+  const addProduct = () => {
+    if (!newProduct.name || !newProduct.price || !newProduct.category) {
+      alert('Please fill in all required fields')
+      return
+    }
+
+    const product: Product = {
+      id: Date.now().toString(),
+      name: newProduct.name!,
+      price: newProduct.price!,
+      category: newProduct.category!,
+      description: newProduct.description || '',
+      stock: newProduct.stock || 0,
+      is_available: newProduct.is_available ?? true,
+      best_seller: newProduct.best_seller ?? false,
+      image_url: newProduct.image_url || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop'
+    }
+
+    setProducts(prev => [...prev, product])
+    setNewProduct({
+      name: '',
+      price: 0,
+      category: 'main',
+      description: '',
+      stock: 0,
+      is_available: true,
+      best_seller: false,
+      image_url: ''
+    })
+    setShowAddProduct(false)
+  }
+
+  const updateProduct = (productId: string, updatedProduct: Partial<Product>) => {
+    setProducts(prev => prev.map(p => 
+      p.id === productId ? { ...p, ...updatedProduct } : p
+    ))
+    setEditingProduct(null)
+  }
+
+  const deleteProduct = (productId: string) => {
+    if (confirm('Are you sure you want to delete this product?')) {
+      setProducts(prev => prev.filter(p => p.id !== productId))
+    }
+  }
+
+  const toggleProductAvailability = (productId: string) => {
+    setProducts(prev => prev.map(p => 
+      p.id === productId ? { ...p, is_available: !p.is_available } : p
+    ))
+  }
+
+  const toggleBestSeller = (productId: string) => {
+    setProducts(prev => prev.map(p => 
+      p.id === productId ? { ...p, best_seller: !p.best_seller } : p
+    ))
+  }
+
   return (
     <PinAuthGuard>
       <div className="min-h-screen bg-gray-50">
@@ -741,6 +821,16 @@ export default function POSPage() {
                   }`}
                 >
                   Analytics
+                </button>
+                <button
+                  onClick={() => setViewMode('products')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    viewMode === 'products'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Products
                 </button>
                 {user?.role === 'admin' && (
                   <button
@@ -1287,23 +1377,331 @@ export default function POSPage() {
               </div>
             )}
 
-            {viewMode === 'user-admin' && (
-              <div className="h-full overflow-y-auto p-6">
-                <div className="max-w-4xl mx-auto">
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800">User Administration</h2>
-                    <p className="text-gray-600 mt-1">Manage system users and permissions</p>
+            {viewMode === 'products' && (
+              <div className="h-full p-4">
+                <div className="bg-white rounded-lg shadow-sm border h-full flex flex-col">
+                  {/* Header */}
+                  <div className="p-4 border-b border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-lg font-semibold text-gray-900">Product Management</h2>
+                        <p className="text-sm text-gray-600">Manage your menu items and inventory</p>
+                      </div>
+                      <button
+                        onClick={() => setShowAddProduct(true)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Add Product</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Products List */}
+                  <div className="flex-1 overflow-y-auto p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {products.map((product) => (
+                        <div key={product.id} className="bg-gray-50 rounded-lg border p-4">
+                          <div className="relative">
+                            <Image
+                              src={product.image_url || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop'}
+                              alt={product.name}
+                              width={200}
+                              height={150}
+                              className="w-full h-32 object-cover rounded-lg mb-3"
+                            />
+                            {product.best_seller && (
+                              <div className="absolute top-2 right-2 bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center">
+                                <Star className="w-3 h-3 mr-1" />
+                                Best Seller
+                              </div>
+                            )}
+                            {!product.is_available && (
+                              <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center">
+                                <span className="text-white font-bold">Unavailable</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <h3 className="font-semibold text-gray-900">{product.name}</h3>
+                            <p className="text-sm text-gray-600">{product.description}</p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-lg font-bold text-green-600">${product.price.toFixed(2)}</span>
+                              <span className="text-sm text-gray-500">Stock: {product.stock}</span>
+                            </div>
+                            <div className="text-xs text-gray-500 capitalize">{product.category}</div>
+                            
+                            {/* Action Buttons */}
+                            <div className="flex space-x-2 pt-2">
+                              <button
+                                onClick={() => setEditingProduct(product)}
+                                className="flex-1 bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-blue-700 transition-colors flex items-center justify-center shadow-sm"
+                              >
+                                <Edit className="w-3 h-3 mr-1" />
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => toggleProductAvailability(product.id)}
+                                className={`flex-1 px-3 py-1 rounded text-xs font-medium transition-colors shadow-sm ${
+                                  product.is_available 
+                                    ? 'bg-red-600 text-white hover:bg-red-700' 
+                                    : 'bg-green-600 text-white hover:bg-green-700'
+                                }`}
+                              >
+                                {product.is_available ? 'Disable' : 'Enable'}
+                              </button>
+                              <button
+                                onClick={() => toggleBestSeller(product.id)}
+                                className={`px-3 py-1 rounded text-xs font-medium transition-colors shadow-sm ${
+                                  product.best_seller 
+                                    ? 'bg-yellow-500 text-white hover:bg-yellow-600' 
+                                    : 'bg-gray-600 text-white hover:bg-gray-700'
+                                }`}
+                              >
+                                <Star className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => deleteProduct(product.id)}
+                                className="bg-red-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-red-700 transition-colors shadow-sm"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Add Product Modal */}
+            {showAddProduct && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                  <h3 className="text-lg font-semibold mb-4">Add New Product</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+                      <input
+                        type="text"
+                        value={newProduct.name || ''}
+                        onChange={(e) => setNewProduct(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter product name"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Price *</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={newProduct.price || ''}
+                        onChange={(e) => setNewProduct(prev => ({ ...prev, price: parseFloat(e.target.value) }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                      <select
+                        value={newProduct.category || 'main'}
+                        onChange={(e) => setNewProduct(prev => ({ ...prev, category: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="main">Main Course</option>
+                        <option value="sides">Sides</option>
+                        <option value="drinks">Drinks</option>
+                        <option value="dessert">Dessert</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                      <textarea
+                        value={newProduct.description || ''}
+                        onChange={(e) => setNewProduct(prev => ({ ...prev, description: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        rows={3}
+                        placeholder="Product description"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
+                      <input
+                        type="number"
+                        value={newProduct.stock || ''}
+                        onChange={(e) => setNewProduct(prev => ({ ...prev, stock: parseInt(e.target.value) }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="0"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                      <input
+                        type="url"
+                        value={newProduct.image_url || ''}
+                        onChange={(e) => setNewProduct(prev => ({ ...prev, image_url: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="https://example.com/image.jpg"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center space-x-4">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={newProduct.is_available ?? true}
+                          onChange={(e) => setNewProduct(prev => ({ ...prev, is_available: e.target.checked }))}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-gray-700">Available</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={newProduct.best_seller ?? false}
+                          onChange={(e) => setNewProduct(prev => ({ ...prev, best_seller: e.target.checked }))}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-gray-700">Best Seller</span>
+                      </label>
+                    </div>
                   </div>
                   
-                  {user?.role === 'admin' ? (
-                    <UserManagement />
-                  ) : (
-                    <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
-                      <Shield className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">Access Denied</h3>
-                      <p className="text-gray-600">Only administrators can access user management.</p>
+                  <div className="flex space-x-3 mt-6">
+                    <button
+                      onClick={addProduct}
+                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      Add Product
+                    </button>
+                    <button
+                      onClick={() => setShowAddProduct(false)}
+                      className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Edit Product Modal */}
+            {editingProduct && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">Edit Product</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-1">Product Name *</label>
+                      <input
+                        type="text"
+                        value={editingProduct.name}
+                        onChange={(e) => setEditingProduct(prev => prev ? { ...prev, name: e.target.value } : null)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                      />
                     </div>
-                  )}
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-1">Price *</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editingProduct.price}
+                        onChange={(e) => setEditingProduct(prev => prev ? { ...prev, price: parseFloat(e.target.value) } : null)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-1">Category *</label>
+                      <select
+                        value={editingProduct.category}
+                        onChange={(e) => setEditingProduct(prev => prev ? { ...prev, category: e.target.value } : null)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                      >
+                        <option value="main">Main Course</option>
+                        <option value="sides">Sides</option>
+                        <option value="drinks">Drinks</option>
+                        <option value="dessert">Dessert</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-1">Description</label>
+                      <textarea
+                        value={editingProduct.description || ''}
+                        onChange={(e) => setEditingProduct(prev => prev ? { ...prev, description: e.target.value } : null)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                        rows={3}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-1">Stock Quantity</label>
+                      <input
+                        type="number"
+                        value={editingProduct.stock || ''}
+                        onChange={(e) => setEditingProduct(prev => prev ? { ...prev, stock: parseInt(e.target.value) } : null)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-1">Image URL</label>
+                      <input
+                        type="url"
+                        value={editingProduct.image_url || ''}
+                        onChange={(e) => setEditingProduct(prev => prev ? { ...prev, image_url: e.target.value } : null)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center space-x-4">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={editingProduct.is_available ?? true}
+                          onChange={(e) => setEditingProduct(prev => prev ? { ...prev, is_available: e.target.checked } : null)}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-gray-900">Available</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={editingProduct.best_seller ?? false}
+                          onChange={(e) => setEditingProduct(prev => prev ? { ...prev, best_seller: e.target.checked } : null)}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-gray-900">Best Seller</span>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="flex space-x-3 mt-6">
+                    <button
+                      onClick={() => updateProduct(editingProduct.id, editingProduct)}
+                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium"
+                    >
+                      Save Changes
+                    </button>
+                    <button
+                      onClick={() => setEditingProduct(null)}
+                      className="flex-1 bg-gray-300 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
