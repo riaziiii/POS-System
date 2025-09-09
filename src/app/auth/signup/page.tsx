@@ -26,7 +26,7 @@ export default function SignUpPage() {
     })
 
     if (error) setMessage(error.message)
-    else setMessage('Suriin ang email mo para i-verify ang account.')
+    else setMessage('Check your email to verify your account.')
     setLoading(false)
   }
 

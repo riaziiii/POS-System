@@ -108,9 +108,6 @@ function UserMenu() {
         </div>
         <div className="text-left">
           <p className="text-sm font-medium">{user?.email ?? 'User'}</p>
-          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(role || '')}`}>
-            {role || 'cashier'}
-          </span>
         </div>
       </button>
 
@@ -118,9 +115,6 @@ function UserMenu() {
         <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-1 z-50 border">
           <div className="px-4 py-3 border-b">
             <p className="font-medium text-gray-900">{user?.email ?? 'User'}</p>
-            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-1 ${getRoleColor(role || '')}`}>
-              {role || 'cashier'}
-            </span>
           </div>
           <button
             onClick={handleLogout}
@@ -176,7 +170,7 @@ function useSupabaseIdentity() {
 }
 
 export default function POSPage() {
-  const { role } = useSupabaseIdentity()
+  const { user, role } = useSupabaseIdentity()
   const [currentOrder, setCurrentOrder] = useState<OrderItem[]>([])
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('card')
@@ -742,9 +736,9 @@ export default function POSPage() {
   // filteredOrders removed (unused)
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-PH', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'PHP'
     }).format(amount)
   }
 
@@ -934,14 +928,6 @@ export default function POSPage() {
               
               
               <UserMenu />
-              <div className="hidden sm:flex items-center gap-2">
-              <a href="/auth/login" className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 text-sm">
-                Login
-              </a>
-              <a href="/auth/signup" className="px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm">
-                Sign up
-              </a>
-            </div>
               </div>
             
             {/* Mobile Navigation Menu */}
@@ -1164,7 +1150,7 @@ export default function POSPage() {
                             <div key={index} className="flex items-center justify-between p-1.5 bg-gray-50 border-b border-gray-200">
                 <div className="flex-1 min-w-0">
                                 <div className="font-medium text-gray-900 text-xs leading-tight">{item.product.name}</div>
-                                <div className="text-xs text-gray-600 leading-tight">₱${item.product.price.toFixed(2)} × {item.quantity} = ₱${(item.quantity * item.product.price).toFixed(2)}</div>
+                                <div className="text-xs text-gray-600 leading-tight">₱{item.product.price.toFixed(2)} × {item.quantity} = ₱{(item.quantity * item.product.price).toFixed(2)}</div>
                 </div>
                               <div className="flex items-center space-x-0.5 flex-shrink-0">
                   <button
@@ -1200,7 +1186,7 @@ export default function POSPage() {
                       <div className="bg-white rounded p-2 border border-gray-200">
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-medium text-gray-800">Total:</span>
-                          <span className="text-sm font-bold text-green-600">₱${getTotalAmount().toFixed(2)}</span>
+                          <span className="text-sm font-bold text-green-600">₱{getTotalAmount().toFixed(2)}</span>
           </div>
                         {currentOrder.length > 0 && (
                           <div className="text-xs text-gray-500 mt-0.5 flex justify-between">
