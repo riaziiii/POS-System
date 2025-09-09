@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { 
   ShoppingCart, 
   CreditCard, 
@@ -26,7 +26,9 @@ import {
   Edit,
   Save,
   Upload,
-  Download
+  Download,
+  Menu,
+  ChevronDown
 } from 'lucide-react'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
@@ -165,6 +167,7 @@ export default function POSPage() {
     message: ''
   })
   const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'completed' | 'cancelled'>('all')
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month'>('today')
   const [showBestSellers, setShowBestSellers] = useState(false)
   
@@ -287,47 +290,47 @@ export default function POSPage() {
   const categories = ['all', 'main', 'sides', 'drinks', 'dessert']
 
     // Add these missing helper functions
-    const addToOrder = (product: Product) => {
-      setCurrentOrder(prev => {
-        const existingItem = prev.find(item => item.product.id === product.id)
-        if (existingItem) {
-          return prev.map(item =>
-            item.product.id === product.id
-              ? { ...item, quantity: item.quantity + 1, total_price: (item.quantity + 1) * item.product.price }
-              : item
-          )
-        }
-        return [...prev, { product, quantity: 1, total_price: product.price }]
-      })
-    }
-    
-
-  
-    const removeFromOrder = (productId: string) => {
-      setCurrentOrder(prev => prev.filter(item => item.product.id !== productId))
-    }
-  
-    const updateQuantity = (productId: string, newQuantity: number) => {
-      if (newQuantity <= 0) {
-        removeFromOrder(productId)
-        return
-      }
-      setCurrentOrder(prev =>
-        prev.map(item =>
-          item.product.id === productId
-            ? { ...item, quantity: newQuantity, total_price: newQuantity * item.product.price }
+  const addToOrder = (product: Product) => {
+    setCurrentOrder(prev => {
+      const existingItem = prev.find(item => item.product.id === product.id)
+      if (existingItem) {
+        return prev.map(item =>
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + 1, total_price: (item.quantity + 1) * item.product.price }
             : item
         )
+      }
+      return [...prev, { product, quantity: 1, total_price: product.price }]
+    })
+  }
+    
+
+
+  const removeFromOrder = (productId: string) => {
+    setCurrentOrder(prev => prev.filter(item => item.product.id !== productId))
+  }
+
+  const updateQuantity = (productId: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      removeFromOrder(productId)
+      return
+    }
+    setCurrentOrder(prev =>
+      prev.map(item =>
+        item.product.id === productId
+          ? { ...item, quantity: newQuantity, total_price: newQuantity * item.product.price }
+          : item
       )
-    }
-  
-    const getTotalAmount = () => {
-      return currentOrder.reduce((total, item) => total + item.total_price, 0)
-    }
-  
-    const filteredProducts = selectedCategory === 'all' 
-      ? products 
-      : products.filter(product => product.category === selectedCategory)
+    )
+  }
+
+  const getTotalAmount = () => {
+    return currentOrder.reduce((total, item) => total + item.total_price, 0)
+  }
+
+  const filteredProducts = selectedCategory === 'all' 
+    ? products 
+    : products.filter(product => product.category === selectedCategory)
 
     const finalProducts = showBestSellers
       ? filteredProducts.filter(p => p.best_seller)
@@ -828,16 +831,26 @@ export default function POSPage() {
   return (
     <PinAuthGuard>
       <div className="min-h-screen bg-gray-50">
-        {/* Main Content */}
-        <div className="h-screen flex flex-col">
-          {/* Navigation Header */}
-          <div className="bg-white shadow-sm border-b z-10 flex-shrink-0">
-            <div className="flex items-center justify-between px-6 py-4">
-              <h1 className="text-2xl font-bold text-gray-800">Restaurant POS</h1>
-              <div className="flex gap-2">
+        {/*Main Content*/}
+        <div className="min-h-screen flex flex-col">
+            {/* Navigation Header - Mobile Responsive */}
+            <div className="bg-white shadow-sm border-b z-10 flex-shrink-0">
+            <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4">
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="lg:hidden p-1 rounded-md hover:bg-gray-100"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-800">Restaurant POS</h1>
+              </div>
+              
+              {/* Desktop Navigation */}
+              <div className="hidden lg:flex gap-2">
                 <button
                   onClick={() => setViewMode('pos')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium transition-colors text-sm ${
                     viewMode === 'pos'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -847,7 +860,7 @@ export default function POSPage() {
                 </button>
                 <button
                   onClick={() => setViewMode('orders')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium transition-colors text-sm ${
                     viewMode === 'orders'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -857,7 +870,7 @@ export default function POSPage() {
                 </button>
                 <button
                   onClick={() => setViewMode('analytics')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium transition-colors text-sm ${
                     viewMode === 'analytics'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -867,7 +880,7 @@ export default function POSPage() {
                 </button>
                 <button
                   onClick={() => setViewMode('products')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium transition-colors text-sm ${
                     viewMode === 'products'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -878,7 +891,7 @@ export default function POSPage() {
                 {user?.role === 'admin' && (
                   <button
                     onClick={() => setViewMode('user-admin')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium transition-colors text-sm ${
                       viewMode === 'user-admin'
                         ? 'bg-red-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -888,32 +901,93 @@ export default function POSPage() {
                   </button>
                 )}
               </div>
+              
               <UserMenu />
             </div>
+            
+            {/* Mobile Navigation Menu */}
+            {isMobileMenuOpen && (
+              <div className="lg:hidden border-t bg-white">
+                <div className="px-3 py-2 space-y-1">
+                  <button
+                    onClick={() => { setViewMode('pos'); setIsMobileMenuOpen(false) }}
+                    className={`w-full text-left px-3 py-2 rounded-lg font-medium transition-colors ${
+                      viewMode === 'pos'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    POS
+                  </button>
+                  <button
+                    onClick={() => { setViewMode('orders'); setIsMobileMenuOpen(false) }}
+                    className={`w-full text-left px-3 py-2 rounded-lg font-medium transition-colors ${
+                      viewMode === 'orders'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Orders
+                  </button>
+                  <button
+                    onClick={() => { setViewMode('analytics'); setIsMobileMenuOpen(false) }}
+                    className={`w-full text-left px-3 py-2 rounded-lg font-medium transition-colors ${
+                      viewMode === 'analytics'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Analytics
+                  </button>
+                  <button
+                    onClick={() => { setViewMode('products'); setIsMobileMenuOpen(false) }}
+                    className={`w-full text-left px-3 py-2 rounded-lg font-medium transition-colors ${
+                      viewMode === 'products'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Products
+                  </button>
+                  {user?.role === 'admin' && (
+                    <button
+                      onClick={() => { setViewMode('user-admin'); setIsMobileMenuOpen(false) }}
+                      className={`w-full text-left px-3 py-2 rounded-lg font-medium transition-colors ${
+                        viewMode === 'user-admin'
+                          ? 'bg-red-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      User Admin
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-
+             
           {/* Main Content Area */}
-          <div className="flex-1 overflow-hidden p-4 sm:p-6">
+          <div className="flex-1 overflow-hidden p-2 sm:p-4 lg:p-6">
             {viewMode === 'pos' && (
-              <div className="h-full grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="h-full grid grid-cols-1 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                 {/* Left Container - Products (2/3 width) */}
                 <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border flex flex-col h-full">
                   {/* Categories Header */}
                   <div className="p-4 sm:p-6 border-b flex-shrink-0">
                     <div className="flex gap-2 flex-wrap">
-                      {categories.map(category => (
-                        <button
-                          key={category}
-                          onClick={() => setSelectedCategory(category)}
+          {categories.map(category => (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
                           className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
-                            selectedCategory === category
-                              ? 'bg-blue-600 text-white'
+                selectedCategory === category
+                  ? 'bg-blue-600 text-white'
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        >
-                          {category}
-                        </button>
-                      ))}
+              }`}
+            >
+              {category}
+            </button>
+          ))}
                       <button
                         onClick={() => setShowBestSellers(v => !v)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ml-auto ${
@@ -925,19 +999,19 @@ export default function POSPage() {
                         <span className="sm:hidden">⭐</span>
                       </button>
                     </div>
-                  </div>
+        </div>
 
-                  {/* Products Grid */}
+        {/* Products Grid */}
                   <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                       {finalProducts.map(product => (
-                        <button
-                          key={product.id}
-                          onClick={() => addToOrder(product)}
+            <button
+              key={product.id}
+              onClick={() => addToOrder(product)}
                           disabled={!product.is_available}
                           className="bg-gray-50 rounded-lg border hover:border-blue-300 transition-all duration-200 overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {/* Product Image */}
+            >
+              {/* Product Image */}
                           <div className="relative h-28 sm:h-32 overflow-hidden">
                             {product.best_seller && (
                               <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-amber-500/90 backdrop-blur-sm text-white rounded-full px-2 py-0.5">
@@ -945,29 +1019,29 @@ export default function POSPage() {
                                 <span className="text-[10px] font-semibold leading-none">Best</span>
                               </div>
                             )}
-                            {product.image_url ? (
-                              <Image
-                                src={product.image_url}
-                                alt={product.name}
-                                fill
-                                className="object-cover group-hover:scale-105 transition-transform duration-200"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                {product.image_url ? (
+                  <Image
+                    src={product.image_url}
+                    alt={product.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-200"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                                 <ImageIcon className="text-gray-400" size={24} />
-                              </div>
-                            )}
+                  </div>
+                )}
                             {product.is_available && (
-                              <div className="absolute top-2 right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Plus className="text-white" size={16} />
-                              </div>
+                <div className="absolute top-2 right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Plus className="text-white" size={16} />
+                </div>
                             )}
-                          </div>
-                          
-                          {/* Product Info */}
+              </div>
+              
+              {/* Product Info */}
                           <div className="p-3 text-left">
                             <div className="font-semibold text-gray-800 mb-1 text-sm">{product.name}</div>
-                            {product.description && (
+                {product.description && (
                               <div className="text-xs text-gray-600 mb-2 line-clamp-2">{product.description}</div>
                             )}
                             <div className="flex justify-between items-center">
@@ -976,19 +1050,19 @@ export default function POSPage() {
                                 <div className="text-xs text-gray-500">Stock: {product.stock}</div>
                               )}
                             </div>
-                          </div>
-                        </button>
-                      ))}
+              </div>
+            </button>
+          ))}
                     </div>
-                  </div>
-                </div>
+        </div>
+      </div>
 
                 {/* Right Container - Order Summary (1/3 width) */}
                 <div className="lg:col-span-1 bg-white rounded-lg shadow-sm border flex flex-col h-full">
                   <div className="p-4 sm:p-6 border-b flex-shrink-0">
                     <h2 className="text-lg font-semibold text-gray-800">Current Order</h2>
-                  </div>
-                  
+        </div>
+
                   {/* Order Type and Table Selection - Fixed */}
                   <div className="p-1.5 border-b flex-shrink-0 space-y-1.5">
                     {/* Order Type Selection */}
@@ -1015,7 +1089,7 @@ export default function POSPage() {
                         >
                           Take-out
                         </button>
-                      </div>
+            </div>
                     </div>
 
                     {/* Table Number (for dine-in) */}
@@ -1029,10 +1103,10 @@ export default function POSPage() {
                           placeholder="Table #"
                           className="w-full px-1.5 py-1 border-2 border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-semibold text-black placeholder-gray-600 bg-white"
                         />
-                      </div>
-                    )}
-                  </div>
-
+                    </div>
+                  )}
+                </div>
+                
                   {/* Order Items - Scrollable Section */}
                   <div className="flex-1 overflow-y-auto min-h-0">
                     <div className="p-3">
@@ -1049,55 +1123,55 @@ export default function POSPage() {
                         <div className="space-y-0">
                           {currentOrder.map((item, index) => (
                             <div key={index} className="flex items-center justify-between p-1.5 bg-gray-50 border-b border-gray-200">
-                              <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0">
                                 <div className="font-medium text-gray-900 text-xs leading-tight">{item.product.name}</div>
                                 <div className="text-xs text-gray-600 leading-tight">₱${item.product.price.toFixed(2)} × {item.quantity} = ₱${(item.quantity * item.product.price).toFixed(2)}</div>
-                              </div>
+                </div>
                               <div className="flex items-center space-x-0.5 flex-shrink-0">
-                                <button
+                  <button
                                   onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
                                   className="w-4 h-4 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center"
                                 >
                                   <Minus className="w-2 h-2 text-red-600" />
-                                </button>
-                                <button
+                  </button>
+                  <button
                                   onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                                   className="w-4 h-4 rounded-full bg-green-100 hover:bg-green-200 flex items-center justify-center"
                                 >
                                   <Plus className="w-2 h-2 text-green-600" />
-                                </button>
-                                <button
+                  </button>
+                  <button
                                   onClick={() => removeFromOrder(item.product.id)}
                                   className="w-4 h-4 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center"
                                 >
                                   <Trash2 className="w-2 h-2 text-red-600" />
-                                </button>
-                              </div>
-                            </div>
+                  </button>
+                </div>
+              </div>
                           ))}
                         </div>
-                      )}
+          )}
                     </div>
-                  </div>
+        </div>
 
                   {/* Fixed Bottom Section - Always Visible */}
                   <div className="border-t bg-gray-50 flex-shrink-0">
                     <div className="p-3 space-y-2">
-                      {/* Total */}
+        {/* Total */}
                       <div className="bg-white rounded p-2 border border-gray-200">
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-medium text-gray-800">Total:</span>
                           <span className="text-sm font-bold text-green-600">₱${getTotalAmount().toFixed(2)}</span>
-                        </div>
+          </div>
                         {currentOrder.length > 0 && (
                           <div className="text-xs text-gray-500 mt-0.5 flex justify-between">
                             <span>{currentOrder.reduce((sum, item) => sum + item.quantity, 0)} items</span>
                             <span>{orderType === 'dine-in' ? 'Dine-in' : 'Take-out'}</span>
                           </div>
                         )}
-                      </div>
+        </div>
 
-                      {/* Payment Methods */}
+        {/* Payment Methods */}
                       <div>
                         <label className="block text-xs font-medium text-gray-800 mb-1">Payment Method</label>
                         <div className="grid grid-cols-2 gap-2">
@@ -1105,7 +1179,7 @@ export default function POSPage() {
                             { name: 'Cash', icon: '', color: 'bg-green-500 hover:bg-green-600' },
                             { name: 'Card', icon: '', color: 'bg-blue-500 hover:bg-blue-600' }
                           ].map(method => (
-                            <button
+              <button
                               key={method.name}
                               onClick={() => setPaymentMethod(method.name.toLowerCase() as 'cash' | 'card')}
                               className={`px-2 py-1.5 rounded text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1 ${
@@ -1116,14 +1190,14 @@ export default function POSPage() {
                             >
                               <span className="text-xs">{method.icon}</span>
                               <span className="text-xs">{method.name}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+              </button>
+            ))}
+          </div>
+        </div>
 
-                      {/* Action Buttons */}
+        {/* Action Buttons */}
                       <div className="space-y-2">
-                        <button
+          <button
                           onClick={processPayment}
                           disabled={currentOrder.length === 0 || processingState.isProcessing}
                           className="w-full bg-green-600 text-white py-2 rounded text-sm font-medium hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
@@ -1134,8 +1208,8 @@ export default function POSPage() {
                             <CreditCard size={14} />
                           )}
                           {processingState.isProcessing ? 'Processing...' : 'Process Payment'}
-                        </button>
-                        
+          </button>
+          
                         <button
                           onClick={sendReceipt}
                           disabled={currentOrder.length === 0 || processingState.isProcessing}
@@ -1201,8 +1275,8 @@ export default function POSPage() {
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₱${order.total_amount.toFixed(2)}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button
-                                  onClick={() => {
+          <button
+            onClick={() => {
                                     const currentStatus = order.status
                                     let newStatus: 'pending' | 'completed' | 'cancelled'
                                     
@@ -1227,7 +1301,7 @@ export default function POSPage() {
                                   {order.status === 'pending' ? 'Complete' : 
                                    order.status === 'completed' ? 'Cancelled' : 
                                    'Pending'}
-                                </button>
+          </button>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {formatDate(order.created_at)}
@@ -1250,9 +1324,9 @@ export default function POSPage() {
                           ))}
                       </tbody>
                     </table>
-                  </div>
-                </div>
-              </div>
+        </div>
+      </div>
+    </div>
             )}
 
             {viewMode === 'analytics' && (
