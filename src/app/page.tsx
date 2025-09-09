@@ -1256,7 +1256,7 @@ export default function POSPage() {
 
             {viewMode === 'orders' && (
               <div className="h-full overflow-y-auto text-gray-800">
-                <div className="max-w-6xl mx-auto p-6">
+                <div className="max-w-7xl mx-auto p-6">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold text-gray-800">Orders Management</h2>
                     <div className="flex gap-2">
@@ -1298,52 +1298,44 @@ export default function POSPage() {
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {order.order_items.length} items
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₱${order.total_amount.toFixed(2)}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₱{order.total_amount.toFixed(2)}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-          <button
-            onClick={() => {
-                                    const currentStatus = order.status
-                                    let newStatus: 'pending' | 'completed' | 'cancelled'
-                                    
-                                    if (currentStatus === 'pending') {
-                                      newStatus = 'completed'
-                                    } else if (currentStatus === 'completed') {
-                                      newStatus = 'cancelled'
-                                    } else {
-                                      newStatus = 'pending'
-                                    }
-                                    
-                                    updateOrderStatus(order.id, newStatus)
-                                  }}
-                                  className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-                                    order.status === 'pending' 
-                                      ? 'bg-yellow-500 text-white hover:bg-yellow-600' 
-                                      : order.status === 'completed'
-                                      ? 'bg-green-500 text-white hover:bg-green-600'
-                                      : 'bg-red-500 text-white hover:bg-red-600'
+                                <span
+                                  className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                                    order.status === 'completed'
+                                      ? 'bg-green-100 text-green-800'
+                                      : order.status === 'pending'
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-red-100 text-red-800'
                                   }`}
                                 >
-                                  {order.status === 'pending' ? 'Complete' : 
-                                   order.status === 'completed' ? 'Cancelled' : 
-                                   'Pending'}
-          </button>
+                                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                </span>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {formatDate(order.created_at)}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button
-                                  onClick={() => updateOrderStatus(order.id, order.status === 'pending' ? 'completed' : 'pending')}
-                                  className="text-blue-600 hover:text-blue-900 mr-3"
-                                >
-                                  {order.status === 'pending' ? 'Complete' : 'Reopen'}
-                                </button>
-                                <button
-                                  onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                                  className="text-red-600 hover:text-red-900"
-                                >
-                                  Cancel
-                                </button>
+                                <div className="flex items-center gap-4">
+                                  <button
+                                    onClick={() => updateOrderStatus(order.id, 'pending')}
+                                    className={`px-4 py-1.5 rounded ${order.status === 'pending' ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                                  >
+                                    Pending
+                                  </button>
+                                  <button
+                                    onClick={() => updateOrderStatus(order.id, 'completed')}
+                                    className={`px-4 py-1.5 rounded ${order.status === 'completed' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                                  >
+                                    Completed
+                                  </button>
+                                  <button
+                                    onClick={() => updateOrderStatus(order.id, 'cancelled')}
+                                    className={`px-4 py-1.5 rounded ${order.status === 'cancelled' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                                  >
+                                    Cancelled
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
