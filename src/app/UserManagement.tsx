@@ -1,39 +1,49 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { usePinAuth } from '@/lib/pin-auth-context'
-import { supabase } from '@/lib/supabase'
-import { Plus, Edit, Trash2, Lock, Unlock, User, Shield } from 'lucide-react'
 
-interface User {
+import { supabase } from '@/lib/supabase'
+import { Lock, Unlock, User, Shield } from 'lucide-react'
+
+
+
+interface UserRow {
   id: string
-  name: string
-  email?: string
+  name: string | null
   role: 'admin' | 'cashier' | 'manager'
   is_active: boolean
-  login_attempts: number
-  locked_until?: string
-  last_login?: string
 }
 
 export default function UserManagement() {
-  const { user: currentUser } = usePinAuth()
-  const [users, setUsers] = useState<User[]>([])
+  const [role, setRole] = useState<'admin' | 'manager' | 'cashier' | null>(null)
+  const [users, setUsers] = useState<UserRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [showAddUser, setShowAddUser] = useState(false)
-  const [editingUser, setEditingUser] = useState<User | null>(null)
 
   useEffect(() => {
-    if (currentUser?.role === 'admin') {
-      loadUsers()
+    const init = async () => {
+      const { data: u } = await supabase.auth.getUser()
+      if (!u.user) { setRole(null); setLoading(false); return }
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', u.user.id)
+        .single()
+      const r = prof?.role as ('admin' | 'manager' | 'cashier') | undefined
+      setRole(r ?? null)
+      await loadUsers()
     }
-  }, [currentUser])
+    init()
+    const sub = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!session?.user) setRole(null)
+    })
+    return () => sub.data.subscription.unsubscribe()
+  }, [])
 
   const loadUsers = async () => {
     try {
       const { data, error } = await supabase
-        .from('pos_users')
-        .select('*')
+        .from('profiles')
+        .select('id, name, role, is_active')
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -45,27 +55,12 @@ export default function UserManagement() {
     }
   }
 
-  const unlockUser = async (userId: string) => {
-    try {
-      const { error } = await supabase
-        .from('pos_users')
-        .update({ 
-          login_attempts: 0,
-          locked_until: null
-        })
-        .eq('id', userId)
-
-      if (error) throw error
-      loadUsers()
-    } catch (error) {
-      console.error('Error unlocking user:', error)
-    }
-  }
+  // no unlock flow in email/password + profiles setup
 
   const toggleUserStatus = async (userId: string, isActive: boolean) => {
     try {
       const { error } = await supabase
-        .from('pos_users')
+        .from('profiles')
         .update({ is_active: isActive })
         .eq('id', userId)
 
@@ -76,7 +71,7 @@ export default function UserManagement() {
     }
   }
 
-  if (currentUser?.role !== 'admin') {
+  if (role !== 'admin') {
     return (
       <div className="text-center py-8">
         <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -89,13 +84,7 @@ export default function UserManagement() {
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-gray-900">User Management</h2>
-        <button
-          onClick={() => setShowAddUser(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add User
-        </button>
+        
       </div>
 
       {loading ? (

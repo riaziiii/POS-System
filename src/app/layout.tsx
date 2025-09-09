@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { PinAuthProvider } from '@/lib/pin-auth-context'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -18,9 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <PinAuthProvider>
-          {children}
-        </PinAuthProvider>
+        {children}
       </body>
     </html>
   )

@@ -1,41 +1,34 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   ShoppingCart, 
   CreditCard, 
   Receipt, 
   Plus, 
   Minus, 
-  X, 
   Image as ImageIcon, 
   Loader2, 
-  CheckCircle, 
-  AlertCircle,
   TrendingUp,
   DollarSign,
-  Package,
   Users,
   Star,
   LogOut,
   User,
-  Settings,
   Shield,
   Trash2,
   ShoppingBag,
   Edit,
-  Save,
-  Upload,
   Download,
   Menu,
-  ChevronDown
+  
 } from 'lucide-react'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { Order, OrderItem as OrderItemType } from '@/types'
-import { usePinAuth } from '@/lib/pin-auth-context'
-import PinAuthGuard from '@/app/pinauthguard'
+import SupabaseAuthGuard from '@/app/supabaseauthguard'
 import UserManagement from '@/app/UserManagement'
+import { useRouter } from 'next/navigation'
 
 interface Product {
   id: string
@@ -87,16 +80,16 @@ interface Analytics {
 type ViewMode = 'pos' | 'orders' | 'analytics' | 'user-admin' | 'products'
 
 function UserMenu() {
-  const { user, logout } = usePinAuth()
   const [isOpen, setIsOpen] = useState(false)
+  const { user, role } = useSupabaseIdentity()
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
     setIsOpen(false)
   }
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
+  const getRoleColor = (r: string) => {
+    switch (r) {
       case 'admin': return 'bg-red-100 text-red-800'
       case 'manager': return 'bg-blue-100 text-blue-800'
       case 'cashier': return 'bg-green-100 text-green-800'
@@ -114,9 +107,9 @@ function UserMenu() {
           <User className="w-4 h-4 text-white" />
         </div>
         <div className="text-left">
-          <p className="text-sm font-medium">{user?.name}</p>
-          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(user?.role || '')}`}>
-            {user?.role}
+          <p className="text-sm font-medium">{user?.email ?? 'User'}</p>
+          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(role || '')}`}>
+            {role || 'cashier'}
           </span>
         </div>
       </button>
@@ -124,10 +117,9 @@ function UserMenu() {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-1 z-50 border">
           <div className="px-4 py-3 border-b">
-            <p className="font-medium text-gray-900">{user?.name}</p>
-            <p className="text-sm text-gray-500">{user?.email}</p>
-            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-1 ${getRoleColor(user?.role || '')}`}>
-              {user?.role}
+            <p className="font-medium text-gray-900">{user?.email ?? 'User'}</p>
+            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-1 ${getRoleColor(role || '')}`}>
+              {role || 'cashier'}
             </span>
           </div>
           <button
@@ -143,8 +135,48 @@ function UserMenu() {
   )
 }
 
+//
+
+function useSupabaseIdentity() {
+	const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
+	const [role, setRole] = useState<'admin' | 'manager' | 'cashier' | null>(null)
+
+	useEffect(() => {
+		let active = true
+		const load = async () => {
+			const { data: u } = await supabase.auth.getUser()
+			if (!active) return
+			const su = u.user ? { id: u.user.id, email: u.user.email ?? undefined } : null
+			setUser(su)
+			if (su?.id) {
+				const { data: prof } = await supabase
+					.from('profiles')
+					.select('role')
+					.eq('id', su.id)
+					.single()
+				if (prof?.role) setRole(prof.role)
+			}
+		}
+		load()
+		const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+			if (session?.user) {
+				setUser({ id: session.user.id, email: session.user.email ?? undefined })
+			} else {
+				setUser(null)
+				setRole(null)
+			}
+		})
+		return () => {
+			active = false
+			sub.subscription.unsubscribe()
+		}
+	}, [])
+
+	return { user, role }
+}
+
 export default function POSPage() {
-  const { user } = usePinAuth()
+  const { role } = useSupabaseIdentity()
   const [currentOrder, setCurrentOrder] = useState<OrderItem[]>([])
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('card')
@@ -336,8 +368,8 @@ export default function POSPage() {
       ? filteredProducts.filter(p => p.best_seller)
       : filteredProducts
   
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
       loadOrders()
       loadAnalytics()
     }, [dateRange])
@@ -707,9 +739,7 @@ export default function POSPage() {
     `
   }
 
-  const filteredOrders = orders.filter(order => 
-    orderFilter === 'all' || order.status === orderFilter
-  )
+  // filteredOrders removed (unused)
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -829,7 +859,7 @@ export default function POSPage() {
   }
 
   return (
-    <PinAuthGuard>
+    <SupabaseAuthGuard>
       <div className="min-h-screen bg-gray-50">
         {/*Main Content*/}
         <div className="min-h-screen flex flex-col">
@@ -888,7 +918,7 @@ export default function POSPage() {
                 >
                   Products
                 </button>
-                {user?.role === 'admin' && (
+                {role === 'admin' && (
                   <button
                     onClick={() => setViewMode('user-admin')}
                     className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium transition-colors text-sm ${
@@ -902,8 +932,17 @@ export default function POSPage() {
                 )}
               </div>
               
+              
               <UserMenu />
+              <div className="hidden sm:flex items-center gap-2">
+              <a href="/auth/login" className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 text-sm">
+                Login
+              </a>
+              <a href="/auth/signup" className="px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm">
+                Sign up
+              </a>
             </div>
+              </div>
             
             {/* Mobile Navigation Menu */}
             {isMobileMenuOpen && (
@@ -949,7 +988,7 @@ export default function POSPage() {
                   >
                     Products
                   </button>
-                  {user?.role === 'admin' && (
+                  {role === 'admin' && (
                     <button
                       onClick={() => { setViewMode('user-admin'); setIsMobileMenuOpen(false) }}
                       className={`w-full text-left px-3 py-2 rounded-lg font-medium transition-colors ${
@@ -1498,7 +1537,7 @@ export default function POSPage() {
                   </div>
                   
                   <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-                    {user?.role === 'admin' ? (
+                    {role === 'admin' ? (
                       <UserManagement />
                     ) : (
                       <div className="text-center text-gray-500 py-8">
@@ -1852,6 +1891,6 @@ export default function POSPage() {
           </div>
         </div>
       </div>
-    </PinAuthGuard>
+    </SupabaseAuthGuard>
   )
 }
