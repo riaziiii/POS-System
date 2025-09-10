@@ -16,8 +16,7 @@ export default function SignUpPage() {
     setLoading(true)
     setMessage('')
 
-    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    const baseUrl = isLocal ? 'http://localhost:3000' : 'https://ria-pos.vercel.app'
+    const baseUrl = 'https://ria-pos.vercel.app'
 
     const { error } = await supabase.auth.signUp({
       email,
