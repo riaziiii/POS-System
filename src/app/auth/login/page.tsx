@@ -62,7 +62,7 @@ export default function LoginPage() {
           {loading ? 'Signing in...' : 'Sign in'}
         </button>
           {errorMsg && <p className="text-sm mt-3 text-red-600">{errorMsg}</p>}
-          <p className="text-sm mt-3">Don't have an account? <a href="/auth/signup" className="text-blue-700 hover:text-blue-800">Sign up</a></p>
+          <p className="text-sm mt-3">Don&apos;t have an account? <a href="/auth/signup" className="text-blue-700 hover:text-blue-800">Sign up</a></p>
         </form>
       </div>
     </div>

@@ -1424,7 +1424,7 @@ export default function POSPage() {
                       {/* Top Products */}
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Products</h3>
-                        <div className="space-y-3">
+        <div className="space-y-3">
                           {analytics.topProducts.map((product, index) => (
                             <div key={index} className="flex items-center justify-between">
                               <div className="flex items-center">
@@ -1540,13 +1540,13 @@ export default function POSPage() {
                         <p className="text-sm text-gray-600">Manage your menu items and inventory</p>
                       </div>
                       <div className="flex items-center space-x-3">
-                        <button
+          <button
                           onClick={downloadProductsCSV}
                           className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
                         >
                           <Download className="w-4 h-4" />
                           <span>Download CSV</span>
-                        </button>
+          </button>
                         <button
                           onClick={() => setShowAddProduct(true)}
                           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
@@ -1595,7 +1595,7 @@ export default function POSPage() {
                             
                             {/* Action Buttons */}
                             <div className="flex space-x-2 pt-2">
-                              <button
+          <button
                                 onClick={() => setEditingProduct(product)}
                                 className="flex-1 bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-blue-700 transition-colors flex items-center justify-center shadow-sm"
                               >
@@ -1627,10 +1627,10 @@ export default function POSPage() {
                                 className="bg-red-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-red-700 transition-colors shadow-sm"
                               >
                                 <Trash2 className="w-3 h-3" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
+          </button>
+        </div>
+      </div>
+    </div>
                       ))}
                     </div>
                   </div>

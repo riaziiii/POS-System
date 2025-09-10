@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function AuthCallbackPage() {
+function CallbackContent() {
   const router = useRouter()
   const search = useSearchParams()
   const [status, setStatus] = useState('Finalizing verification...')
@@ -33,6 +33,20 @@ export default function AuthCallbackPage() {
         <p>{status}</p>
       </div>
     </div>
+  )
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen grid place-items-center bg-gray-50">
+        <div className="bg-white border rounded p-6">
+          <p>Loading...</p>
+        </div>
+      </div>
+    }>
+      <CallbackContent />
+    </Suspense>
   )
 }
 

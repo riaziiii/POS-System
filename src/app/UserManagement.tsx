@@ -12,6 +12,10 @@ interface UserRow {
   name: string | null
   role: 'admin' | 'cashier' | 'manager'
   is_active: boolean
+  email?: string | null
+  login_attempts?: number
+  last_login?: string | null
+  locked_until?: string | null
 }
 
 export default function UserManagement() {
@@ -56,6 +60,10 @@ export default function UserManagement() {
   }
 
   // no unlock flow in email/password + profiles setup
+  const unlockUser = async (_userId: string) => {
+    // Unlock flow not implemented in this setup
+    return
+  }
 
   const toggleUserStatus = async (userId: string, isActive: boolean) => {
     try {
